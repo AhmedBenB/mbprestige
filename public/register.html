@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscription – MBPRESTIGE</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1d4ed8;--blue-dk:#1e40af;--blue-lt:#dbeafe;--green:#16a34a;--red:#dc2626;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;--radius:14px;--radius-sm:9px;--gray-300:#d1d5db;--gray-600:#4b5563;--gray-800:#1f2937}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray-50);color:var(--gray-900)}
+a{color:inherit;text-decoration:none}
+.header{background:#fff;border-bottom:1.5px solid var(--gray-200);padding:0 2rem;position:sticky;top:0;z-index:50}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-size:1.1rem;font-weight:800;color:var(--blue);display:flex;align-items:center;gap:.5rem}
+.main{max-width:600px;margin:2rem auto;padding:0 1rem 4rem}
+.progress-bar{display:flex;gap:0;margin-bottom:2rem;border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--gray-200);background:#fff}
+.progress-step{flex:1;padding:.625rem;text-align:center;font-size:.75rem;font-weight:600;color:var(--gray-400);border-right:1px solid var(--gray-200);cursor:pointer;transition:all .2s}
+.progress-step:last-child{border-right:none}
+.progress-step.active{background:var(--blue);color:#fff}
+.progress-step.done{background:#dcfce7;color:var(--green)}
+.card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--gray-200);padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.card-title{font-size:1.25rem;font-weight:800;margin-bottom:.375rem}
+.card-subtitle{font-size:.875rem;color:var(--gray-500);margin-bottom:1.75rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.form-group{margin-bottom:0}
+.form-group-full{grid-column:1/-1}
+.form-label{display:block;font-size:.78rem;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem}
+.form-label .required{color:var(--red)}
+.input,.select{width:100%;padding:.7rem 1rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.875rem;color:var(--gray-900);background:#fff;transition:border-color .15s;font-family:inherit}
+.input:focus,.select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.12)}
+.input.error{border-color:var(--red);background:#fff8f8}
+.input.valid{border-color:var(--green)}
+.input-icon-wrap{position:relative}.input-icon-wrap .input{padding-right:2.75rem}
+.input-icon{position:absolute;right:.875rem;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--gray-400);background:none;border:none;font-size:1rem;padding:0}
+.form-error{color:var(--red);font-size:.78rem;margin-top:.35rem}
+.form-hint{color:var(--gray-400);font-size:.78rem;margin-top:.35rem}
+.strength-wrap{margin-top:.5rem}
+.strength-bar{height:4px;border-radius:9999px;background:var(--gray-200);overflow:hidden}
+.strength-fill{height:100%;border-radius:9999px;transition:width .3s,background .3s;width:0}
+.strength-label{font-size:.75rem;margin-top:.25rem;font-weight:500}
+.section-divider{display:flex;align-items:center;gap:.75rem;margin:1.5rem 0;color:var(--gray-400);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem 1.25rem;border-radius:var(--radius-sm);font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--blue);color:#fff;width:100%}.btn-primary:hover:not(:disabled){background:var(--blue-dk)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:var(--gray-100);color:var(--gray-700);width:100%}.btn-secondary:hover{background:var(--gray-200)}
+.btn-row{display:flex;gap:.75rem;margin-top:1.5rem}
+.checkbox-row{display:flex;align-items:flex-start;gap:.625rem;font-size:.875rem;color:var(--gray-700);margin-top:1rem}
+.checkbox-row input{width:15px;height:15px;accent-color:var(--blue);flex-shrink:0;margin-top:.2rem;cursor:pointer}
+.checkbox-row a{color:var(--blue);text-decoration:underline}
+.tier-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem;margin-top:.5rem}
+.tier-card{border:2px solid var(--gray-200);border-radius:var(--radius-sm);padding:1rem;cursor:pointer;transition:all .2s;text-align:center;position:relative}
+.tier-card:hover,.tier-card.selected{border-color:var(--blue);background:var(--blue-lt)}
+.tier-card.selected::after{content:'✓';position:absolute;top:.5rem;right:.625rem;color:var(--blue);font-weight:800;font-size:.875rem}
+.tier-name{font-size:.875rem;font-weight:700;margin-bottom:.25rem}
+.tier-desc{font-size:.75rem;color:var(--gray-500)}
+.tier-card.golden{border-color:#f59e0b}.tier-card.golden.selected{background:#fef9c3;border-color:#f59e0b}
+.steps-nav{display:none}
+.step-form{display:none}.step-form.active{display:block}
+.success-view{text-align:center;padding:2rem}
+.success-icon{font-size:4rem;margin-bottom:1rem}
+.alert-error{background:#fee2e2;color:var(--red);border:1px solid #fca5a5;padding:.875rem 1rem;border-radius:var(--radius-sm);margin-bottom:1.25rem;font-size:.875rem;display:none}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.tier-cards{grid-template-columns:1fr}.btn-row{flex-direction:column-reverse}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+      MBPRESTIGE
+    </a>
+    <span style="font-size:.875rem;color:var(--gray-500)">Déjà inscrit ? <a href="login.html" style="color:var(--blue);font-weight:600">Se connecter</a></span>
+  </div>
+</header>
+
+<main class="main">
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-step active" id="ps1">1 · Compte</div>
+    <div class="progress-step" id="ps2">2 · Société</div>
+    <div class="progress-step" id="ps3">3 · Confirmation</div>
+  </div>
+
+  <div class="card" id="mainCard">
+    <div class="alert-error" id="formAlert"></div>
+
+    <!-- ── ÉTAPE 1 : Compte ── -->
+    <div class="step-form active" id="step1">
+      <h2 class="card-title">Créez votre compte</h2>
+      <p class="card-subtitle">Accès gratuit — Aucune CB requise</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Prénom <span class="required">*</span></label>
+          <input type="text" class="input" id="first_name" placeholder="Jean" autocomplete="given-name">
+          <div class="form-error" id="e_first_name"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom <span class="required">*</span></label>
+          <input type="text" class="input" id="last_name" placeholder="Dupont" autocomplete="family-name">
+          <div class="form-error" id="e_last_name"></div>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Email professionnel <span class="required">*</span></label>
+          <input type="email" class="input" id="email" placeholder="vous@societe.fr" autocomplete="email" oninput="validateEmail()">
+          <div class="form-error" id="e_email"></div>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Téléphone <span class="required">*</span></label>
+          <input type="tel" class="input" id="phone" placeholder="+33 6 12 34 56 78" autocomplete="tel" required>
+          <div class="form-error" id="e_phone"></div>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Mot de passe <span class="required">*</span></label>
+          <div class="input-icon-wrap">
+            <input type="password" class="input" id="password" placeholder="8 caractères minimum" oninput="checkStrength()" autocomplete="new-password">
+            <button type="button" class="input-icon" onclick="togglePwd('password')">👁</button>
+          </div>
+          <div class="strength-wrap">
+            <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+            <div class="strength-label" id="strengthLabel"></div>
+          </div>
+          <div class="form-error" id="e_password"></div>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
+          <div class="input-icon-wrap">
+            <input type="password" class="input" id="password_confirm" placeholder="Retaper le mot de passe" oninput="checkMatch()" autocomplete="new-password">
+            <button type="button" class="input-icon" onclick="togglePwd('password_confirm')">👁</button>
+          </div>
+          <div class="form-error" id="e_password_confirm"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goStep2()">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 2 : Société ── -->
+    <div class="step-form" id="step2">
+      <h2 class="card-title">Votre société</h2>
+      <p class="card-subtitle">Informations légales requises pour accéder aux enchères</p>
+      <div class="form-grid">
+        <div class="form-group form-group-full">
+          <label class="form-label">Nom de la société <span class="required">*</span></label>
+          <input type="text" class="input" id="company_name" placeholder="AutoPro SARL" autocomplete="organization">
+          <div class="form-error" id="e_company_name"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro TVA</label>
+          <input type="text" class="input" id="vat_number" placeholder="FR12345678901">
+          <div class="form-hint">Format : FR + 11 chiffres</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pays <span class="required">*</span></label>
+          <select class="select" id="country">
+            <option value="">Sélectionner…</option>
+            <option value="FR">🇫🇷 France</option>
+            <option value="BE">🇧🇪 Belgique</option>
+            <option value="DE">🇩🇪 Allemagne</option>
+            <option value="NL">🇳🇱 Pays-Bas</option>
+            <option value="ES">🇪🇸 Espagne</option>
+            <option value="IT">🇮🇹 Italie</option>
+            <option value="PT">🇵🇹 Portugal</option>
+            <option value="PL">🇵🇱 Pologne</option>
+            <option value="RO">🇷🇴 Roumanie</option>
+          </select>
+          <div class="form-error" id="e_country"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ville</label>
+          <input type="text" class="input" id="city" placeholder="Paris">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Code postal</label>
+          <input type="text" class="input" id="zip" placeholder="75001">
+        </div>
+      </div>
+
+      <div class="section-divider">Votre profil acheteur</div>
+      <label class="form-label" style="margin-bottom:.75rem">Type de compte souhaité</label>
+      <div class="tier-cards">
+        <div class="tier-card selected" id="tier-trial" onclick="selectTier('trial')">
+          <div class="tier-name">🔵 Trial</div>
+          <div class="tier-desc">Gratuit · 5 offres actives max</div>
+        </div>
+        <div class="tier-card" id="tier-silver" onclick="selectTier('silver')">
+          <div class="tier-name">⚪ Silver</div>
+          <div class="tier-desc">Dépôt requis · Offres illimitées</div>
+        </div>
+        <div class="tier-card golden" id="tier-golden" onclick="selectTier('golden')">
+          <div class="tier-name">🥇 Golden</div>
+          <div class="tier-desc">7j paiement · 15j parking offert</div>
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="accept_terms">
+        <label for="accept_terms">J'accepte les <a href="cgv.html" target="_blank">Conditions Générales</a> et la <a href="privacy.html" target="_blank">Politique de confidentialité</a> de MBPRESTIGE.</label>
+      </div>
+      <div class="form-error" id="e_terms"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Retour</button>
+        <button class="btn btn-primary" onclick="goStep3()" id="submitBtn">
+          <span id="submitText">Créer mon compte</span>
+          <span id="submitSpinner" style="display:none">⏳ Création…</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── ÉTAPE 3 : Succès ── -->
+    <div class="step-form" id="step3">
+      <div class="success-view">
+        <div class="success-icon">🎉</div>
+        <h2 style="font-size:1.5rem;margin-bottom:.5rem">Compte créé !</h2>
+        <p style="color:var(--gray-500);margin-bottom:2rem">Bienvenue sur MBPRESTIGE, <strong id="welcomeName"></strong>.<br>Votre espace professionnel est prêt.</p>
+        <a href="dashboard.html" class="btn btn-primary" style="max-width:280px;margin:0 auto">Accéder à mon espace →</a>
+        <div style="margin-top:1.25rem">
+          <a href="catalogue.html" style="color:var(--blue);font-size:.875rem;text-decoration:underline">Ou parcourir le catalogue</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avantages -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:1.5rem" id="benefitsRow">
+    <div style="background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:.375rem">🔒</div>
+      <div style="font-size:.8rem;font-weight:600">Inscription gratuite</div>
+      <div style="font-size:.75rem;color:var(--gray-500);margin-top:.25rem">Aucune CB requise</div>
+    </div>
+    <div style="background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:.375rem">✅</div>
+      <div style="font-size:.8rem;font-weight:600">Vérification rapide</div>
+      <div style="font-size:.75rem;color:var(--gray-500);margin-top:.25rem">Compte activé sous 24h</div>
+    </div>
+    <div style="background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:.375rem">🚗</div>
+      <div style="font-size:.8rem;font-weight:600">+5 000 véhicules</div>
+      <div style="font-size:.75rem;color:var(--gray-500);margin-top:.25rem">Mis à jour en temps réel</div>
+    </div>
+  </div>
+</main>
+
+<script>
+let selectedTier = 'trial';
+let currentStep = 1;
+
+function goStep(n) {
+  currentStep = n;
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).classList.toggle('active', i===n);
+    const ps = document.getElementById('ps'+i);
+    if(ps){
+      ps.classList.toggle('active', i===n);
+      ps.classList.toggle('done', i<n);
+    }
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goStep2() {
+  if(!validateStep1()) return;
+  goStep(2);
+}
+
+function goStep3() {
+  if(!validateStep2()) return;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('submitText').style.display='none';
+  document.getElementById('submitSpinner').style.display='';
+  // Simuler API
+  setTimeout(() => {
+    const account = {
+      first_name: document.getElementById('first_name').value.trim(),
+      last_name: document.getElementById('last_name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      password: document.getElementById('password').value,
+      company_name: document.getElementById('company_name').value.trim(),
+      tier: selectedTier,
+      created_at: new Date().toISOString(),
+    };
+    localStorage.setItem('mbp_account', JSON.stringify(account));
+    localStorage.setItem('mbp_has_account', '1');
+    localStorage.setItem('mbp_logged_in', '1');
+
+    document.getElementById('welcomeName').textContent = account.first_name;
+    document.getElementById('benefitsRow').style.display = 'none';
+    goStep(3);
+    document.getElementById('ps3').classList.add('done');
+  }, 1200);
+}
+
+function validateStep1() {
+  let ok = true;
+  clearAllErrors();
+  const fn = v('first_name'), ln = v('last_name'), em = v('email'), phone = v('phone'), pw = v('password'), pc = v('password_confirm');
+  if(!fn) { err('first_name','Le prénom est requis.'); ok=false; }
+  if(!ln) { err('last_name','Le nom est requis.'); ok=false; }
+  if(!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { err('email','Email invalide.'); ok=false; }
+  if(!phone || phone.replace(/\D/g,'').length < 8) { err('phone','Le numéro de téléphone est obligatoire.'); ok=false; }
+  if(!pw||pw.length<8) { err('password','8 caractères minimum.'); ok=false; }
+  if(pw !== pc) { err('password_confirm','Les mots de passe ne correspondent pas.'); ok=false; }
+  return ok;
+}
+
+function validateStep2() {
+  let ok = true;
+  clearAllErrors();
+  if(!v('company_name')) { err('company_name','Le nom de la société est requis.'); ok=false; }
+  if(!v('country')) { err('country','Le pays est requis.'); ok=false; }
+  if(!document.getElementById('accept_terms').checked) { err('terms','Vous devez accepter les conditions générales.'); ok=false; }
+  return ok;
+}
+
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function err(id, msg) {
+  const el = document.getElementById('e_'+id);
+  if(el){ el.textContent = '⚠️ '+msg; el.style.display='block'; }
+  const input = document.getElementById(id);
+  if(input) input.classList.add('error');
+}
+function clearAllErrors() {
+  document.querySelectorAll('.form-error').forEach(e => { e.textContent=''; e.style.display='none'; });
+  document.querySelectorAll('.input.error').forEach(e => e.classList.remove('error'));
+  document.getElementById('formAlert').style.display = 'none';
+}
+
+function checkStrength() {
+  const pw = document.getElementById('password').value;
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  let score = 0;
+  if(pw.length >= 8) score++;
+  if(pw.length >= 12) score++;
+  if(/[A-Z]/.test(pw)) score++;
+  if(/[0-9]/.test(pw)) score++;
+  if(/[^A-Za-z0-9]/.test(pw)) score++;
+  const pct = score * 20;
+  fill.style.width = pct+'%';
+  const colors = ['','#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+  const labels = ['','Très faible','Faible','Moyen','Fort','Très fort'];
+  const labelColors = ['','#ef4444','#f97316','#ca8a04','#16a34a','#15803d'];
+  fill.style.background = colors[score]||'';
+  label.textContent = labels[score]||'';
+  label.style.color = labelColors[score]||'';
+}
+
+function checkMatch() {
+  const pw = document.getElementById('password').value;
+  const pc = document.getElementById('password_confirm').value;
+  const input = document.getElementById('password_confirm');
+  if(pc && pc !== pw) {
+    document.getElementById('e_password_confirm').textContent = '⚠️ Les mots de passe ne correspondent pas.';
+    document.getElementById('e_password_confirm').style.display = 'block';
+    input.classList.add('error');
+  } else if(pc && pc === pw) {
+    document.getElementById('e_password_confirm').style.display = 'none';
+    input.classList.remove('error');
+    input.classList.add('valid');
+  }
+}
+
+function validateEmail() {
+  const em = document.getElementById('email');
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value);
+  em.classList.toggle('valid', ok && em.value);
+  em.classList.toggle('error', !ok && em.value.length > 3);
+}
+
+function selectTier(t) {
+  selectedTier = t;
+  ['trial','silver','golden'].forEach(k => document.getElementById('tier-'+k).classList.toggle('selected', k===t));
+}
+
+function togglePwd(id) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+</script>
+</body>
+</html>

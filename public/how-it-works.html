@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comment ça marche – MBPRESTIGE</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1d4ed8;--blue-lt:#dbeafe;--green:#16a34a;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;--radius:14px;--radius-sm:9px;--gray-300:#d1d5db;--gray-600:#4b5563;--gray-800:#1f2937;--gray-400:#9ca3af}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--gray-900);background:#fff}
+a{color:inherit;text-decoration:none}.container{max-width:1000px;margin:0 auto;padding:0 1.5rem}
+.header{background:#fff;border-bottom:1.5px solid var(--gray-200);position:sticky;top:0;z-index:100}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-size:1.1rem;font-weight:800;color:var(--blue);display:flex;align-items:center;gap:.5rem}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:var(--radius-sm);font-weight:600;font-size:.875rem;cursor:pointer;border:none}
+.btn-primary{background:var(--blue);color:#fff}.btn-outline{border:1.5px solid var(--blue);color:var(--blue)}
+/* Hero */
+.hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:4rem 0;text-align:center}
+.hero h1{font-size:2.5rem;font-weight:800;margin-bottom:1rem}
+.hero p{font-size:1.1rem;color:rgba(255,255,255,.85);max-width:600px;margin:0 auto 2rem}
+/* Steps */
+.steps-section{padding:5rem 0;background:#fff}
+.step-row{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;margin-bottom:5rem}
+.step-row:last-child{margin-bottom:0}
+.step-row.reverse .step-text{order:2}.step-row.reverse .step-visual{order:1}
+.step-number{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:var(--blue);color:#fff;border-radius:50%;font-size:1.5rem;font-weight:800;margin-bottom:1.25rem;box-shadow:0 0 0 8px var(--blue-lt)}
+.step-title{font-size:1.5rem;font-weight:800;margin-bottom:.75rem}
+.step-desc{color:var(--gray-500);font-size:.95rem;line-height:1.8;margin-bottom:1.25rem}
+.step-points{list-style:none;display:flex;flex-direction:column;gap:.625rem}
+.step-points li{display:flex;align-items:flex-start;gap:.625rem;font-size:.875rem;color:var(--gray-700)}
+.step-points li::before{content:'✓';color:var(--green);font-weight:800;flex-shrink:0;margin-top:.1rem}
+.step-visual{background:var(--gray-50);border-radius:var(--radius);border:1.5px solid var(--gray-200);overflow:hidden}
+.mock-ui{padding:1.5rem}
+.mock-header{display:flex;gap:.375rem;margin-bottom:1rem}
+.mock-dot{width:10px;height:10px;border-radius:50%}
+.mock-card{background:#fff;border-radius:var(--radius-sm);border:1.5px solid var(--gray-200);padding:1rem;margin-bottom:.625rem}
+.mock-img{height:80px;background:var(--gray-200);border-radius:6px;margin-bottom:.625rem}
+.mock-line{height:8px;background:var(--gray-200);border-radius:4px;margin-bottom:.375rem}
+.mock-line.short{width:60%}
+.mock-line.price{background:var(--blue-lt);width:40%}
+.mock-badge{display:inline-block;padding:.2rem .5rem;border-radius:9999px;font-size:.65rem;font-weight:700;background:#fee2e2;color:var(--blue-lt);background:var(--blue-lt);color:var(--blue)}
+.mock-timer{background:#fee2e2;color:#dc2626;padding:.375rem .75rem;border-radius:9999px;font-size:.75rem;font-weight:700;text-align:center}
+.mock-input{background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:.5rem .75rem;font-size:.8rem;color:var(--gray-500);width:100%;margin-bottom:.5rem}
+.mock-btn{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:.5rem;font-size:.75rem;font-weight:700;width:100%;text-align:center}
+/* Types section */
+.types-section{background:var(--gray-50);padding:5rem 0}
+.types-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-top:2.5rem}
+.type-card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--gray-200);padding:1.5rem;text-align:center}
+.type-icon{font-size:2.5rem;margin-bottom:1rem}
+.type-name{font-size:1rem;font-weight:700;margin-bottom:.625rem}
+.type-desc{font-size:.875rem;color:var(--gray-500);line-height:1.7}
+.type-tag{display:inline-block;margin-top:.875rem;font-size:.75rem;font-weight:700;padding:.2rem .625rem;border-radius:9999px}
+/* FAQ */
+.faq-section{padding:5rem 0;background:#fff}
+.faq-item{border-bottom:1px solid var(--gray-200);overflow:hidden}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 0;cursor:pointer;font-weight:600;font-size:.95rem}
+.faq-q .arrow{color:var(--gray-400);transition:transform .2s;font-size:1.1rem}
+.faq-q.open .arrow{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;font-size:.875rem;color:var(--gray-500);line-height:1.8}
+.faq-a.open{max-height:300px;padding-bottom:1.25rem}
+/* CTA */
+.cta{background:linear-gradient(135deg,#1e40af,#1d4ed8);color:#fff;padding:4rem 0;text-align:center}
+.cta h2{font-size:2rem;font-weight:800;margin-bottom:.875rem}
+.cta p{color:rgba(255,255,255,.8);margin-bottom:2rem;font-size:1rem}
+.cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+@media(max-width:768px){.step-row{grid-template-columns:1fr}.step-row.reverse .step-text,.step-row.reverse .step-visual{order:unset}.types-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="container" style="max-width:1280px">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+        MBPRESTIGE
+      </a>
+      <nav style="display:flex;gap:1.5rem;font-size:.875rem;font-weight:500">
+        <a href="catalogue.html" style="color:var(--gray-700)">Catalogue</a>
+        <a href="how-it-works.html" style="color:var(--blue)">Comment ça marche</a>
+        <a href="costs.html" style="color:var(--gray-700)">Frais</a>
+      </nav>
+      <div style="display:flex;gap:.75rem">
+        <a href="login.html" class="btn btn-outline">Connexion</a>
+        <a href="register.html" class="btn btn-primary">S'inscrire</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Comment fonctionne MBPRESTIGE ?</h1>
+    <p>Une plateforme simple et transparente pour les professionnels de l'automobile. Du catalogue à la réception du véhicule.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="register.html" class="btn" style="background:#fff;color:var(--blue);padding:.75rem 2rem;font-size:1rem;border-radius:10px">Créer mon compte</a>
+      <a href="catalogue.html" class="btn" style="border:2px solid rgba(255,255,255,.5);color:#fff;padding:.75rem 2rem;font-size:1rem;border-radius:10px">Voir le catalogue</a>
+    </div>
+  </div>
+</section>
+
+<section class="steps-section">
+  <div class="container">
+    <!-- Étape 1 -->
+    <div class="step-row">
+      <div class="step-text">
+        <div class="step-number">1</div>
+        <h2 class="step-title">Inscrivez-vous et vérifiez votre compte</h2>
+        <p class="step-desc">L'inscription est gratuite et prend moins de 5 minutes. Renseignez vos informations professionnelles et votre numéro de TVA intracommunautaire.</p>
+        <ul class="step-points">
+          <li>Compte professionnel vérifié sous 24h</li>
+          <li>Accès immédiat au catalogue en mode Trial</li>
+          <li>Pas de carte bancaire requise</li>
+          <li>Mise à niveau Silver/Golden avec dépôt de garantie</li>
+        </ul>
+      </div>
+      <div class="step-visual">
+        <div class="mock-ui">
+          <div style="font-size:.8rem;font-weight:700;margin-bottom:1rem;color:var(--gray-500)">Inscription</div>
+          <div class="mock-card">
+            <div style="font-size:.75rem;color:var(--gray-400);margin-bottom:.5rem">Votre société</div>
+            <div style="background:var(--gray-100);height:32px;border-radius:6px;margin-bottom:.5rem;display:flex;align-items:center;padding:0 .75rem"><span style="font-size:.8rem;color:var(--gray-500)">Garage Dupont SARL</span></div>
+            <div style="background:var(--gray-100);height:32px;border-radius:6px;display:flex;align-items:center;padding:0 .75rem"><span style="font-size:.8rem;color:var(--gray-500)">FR12345678901</span></div>
+          </div>
+          <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <div style="flex:1;padding:.5rem;background:#dcfce7;border-radius:6px;text-align:center;font-size:.75rem;font-weight:700;color:var(--green)">✅ Vérifié</div>
+            <div style="flex:1;padding:.5rem;background:var(--blue-lt);border-radius:6px;text-align:center;font-size:.75rem;font-weight:700;color:var(--blue)">Trial activé</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 2 -->
+    <div class="step-row reverse">
+      <div class="step-text">
+        <div class="step-number">2</div>
+        <h2 class="step-title">Recherchez et filtrez le catalogue</h2>
+        <p class="step-desc">Accédez à plus de 5 000 véhicules d'occasion avec des filtres avancés : marque, modèle, kilométrage, carburant, TVA récupérable, pays d'origine…</p>
+        <ul class="step-points">
+          <li>Moteur de recherche en temps réel (Meilisearch)</li>
+          <li>Filtres enregistrables avec alertes email</li>
+          <li>Photos haute résolution (connexion requise)</li>
+          <li>Rapports d'expertise et carpass disponibles</li>
+        </ul>
+      </div>
+      <div class="step-visual">
+        <div class="mock-ui">
+          <div style="font-size:.8rem;font-weight:700;margin-bottom:.75rem;color:var(--gray-500)">Catalogue — 5 247 véhicules</div>
+          <div style="background:var(--gray-100);height:32px;border-radius:6px;margin-bottom:.75rem;display:flex;align-items:center;padding:0 .75rem;gap:.5rem"><span style="font-size:.7rem;color:var(--gray-400)">🔍</span><span style="font-size:.8rem;color:var(--gray-400)">BMW Diesel Automatique...</span></div>
+          <div style="display:flex;gap:.375rem;margin-bottom:.75rem;flex-wrap:wrap">
+            <span style="background:var(--blue-lt);color:var(--blue);font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:9999px">BMW ✕</span>
+            <span style="background:var(--blue-lt);color:var(--blue);font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:9999px">Diesel ✕</span>
+            <span style="background:#dcfce7;color:var(--green);font-size:.65rem;font-weight:700;padding:.2rem .5rem;border-radius:9999px">TVA ✕</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <div class="mock-card" style="padding:.75rem">
+              <div class="mock-img" style="height:55px"></div>
+              <div class="mock-line short"></div>
+              <div class="mock-line price"></div>
+            </div>
+            <div class="mock-card" style="padding:.75rem">
+              <div class="mock-img" style="height:55px"></div>
+              <div class="mock-line short"></div>
+              <div class="mock-line price"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 3 -->
+    <div class="step-row">
+      <div class="step-text">
+        <div class="step-number">3</div>
+        <h2 class="step-title">Enchérissez ou achetez directement</h2>
+        <p class="step-desc">Choisissez parmi 4 modes d'achat selon vos besoins. Chaque mode a ses propres règles — transparentes et clairement expliquées.</p>
+        <ul class="step-points">
+          <li><strong>Enchère blind :</strong> offre secrète, modifiable jusqu'à la clôture</li>
+          <li><strong>Enchère ouverte :</strong> meilleure offre visible, surenchère en temps réel</li>
+          <li><strong>Prix fixe :</strong> achat immédiat ou légère négociation (réponse 2h)</li>
+          <li><strong>Stock direct :</strong> disponibilité immédiate</li>
+        </ul>
+      </div>
+      <div class="step-visual">
+        <div class="mock-ui">
+          <div class="mock-badge" style="margin-bottom:.75rem">🔴 Enchère ouverte</div>
+          <div class="mock-timer">⏱ 02:14:38 — Se termine bientôt</div>
+          <div style="margin:.875rem 0">
+            <div style="font-size:.7rem;color:var(--gray-400);margin-bottom:.25rem">Meilleure offre actuelle</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--gray-900)">28 500 €</div>
+            <div style="font-size:.75rem;color:var(--gray-400)">12 offres · Min. suivante : 28 700 €</div>
+          </div>
+          <div class="mock-input" style="display:flex;align-items:center">
+            <span style="flex:1">28 700</span><span style="color:var(--gray-400)">€</span>
+          </div>
+          <div class="mock-btn">Enchérir — 28 700 €</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 4 -->
+    <div class="step-row reverse">
+      <div class="step-text">
+        <div class="step-number">4</div>
+        <h2 class="step-title">Payez et réceptionnez votre véhicule</h2>
+        <p class="step-desc">Après confirmation, procédez au paiement par virement depuis le compte de votre société. Votre véhicule est préparé et vous recevez tous les documents.</p>
+        <ul class="step-points">
+          <li>Confirmation immédiate par email</li>
+          <li>Facture pro forma + titre de propriété</li>
+          <li>Choix : livraison MBPRESTIGE ou enlèvement</li>
+          <li>Parking gratuit 15 jours (compte Golden)</li>
+        </ul>
+      </div>
+      <div class="step-visual">
+        <div class="mock-ui">
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem;background:#dcfce7;border-radius:var(--radius-sm)">
+              <span style="background:var(--green);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">✓</span>
+              <div><div style="font-size:.78rem;font-weight:600">Paiement confirmé</div><div style="font-size:.7rem;color:var(--gray-500)">28 500 + 862 + 75 = 29 437 €</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem;background:var(--blue-lt);border-radius:var(--radius-sm)">
+              <span style="background:var(--blue);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">→</span>
+              <div><div style="font-size:.78rem;font-weight:600">Préparation en cours</div><div style="font-size:.7rem;color:var(--gray-500)">24–48h ouvrées</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem;background:var(--gray-100);border-radius:var(--radius-sm)">
+              <span style="background:var(--gray-400);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0">3</span>
+              <div><div style="font-size:.78rem;font-weight:600">Livraison / Enlèvement</div><div style="font-size:.7rem;color:var(--gray-500)">Selon option choisie</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="types-section">
+  <div class="container">
+    <h2 style="font-size:1.75rem;font-weight:800;text-align:center">Les 4 modes d'achat</h2>
+    <p style="text-align:center;color:var(--gray-500);margin-top:.5rem">Chaque mode a ses propres règles métier</p>
+    <div class="types-grid">
+      <div class="type-card">
+        <div class="type-icon">🔒</div>
+        <div class="type-name">Enchère Blind</div>
+        <div class="type-desc">Soumettez votre meilleur prix sans voir les autres offres. Offre modifiable tant que l'enchère est ouverte. Le vendeur désigne le gagnant.</div>
+        <span class="type-tag" style="background:#ede9fe;color:#7c3aed">Stratégique</span>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">📈</div>
+        <div class="type-name">Enchère Ouverte</div>
+        <div class="type-desc">La meilleure offre est visible. Surenchérissez d'au moins 200 €. Clôture automatique à l'heure prévue. Offre non annulable une fois déposée.</div>
+        <span class="type-tag" style="background:#fee2e2;color:#dc2626">Compétitif</span>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">🏷️</div>
+        <div class="type-name">Prix Fixe</div>
+        <div class="type-desc">Achat immédiat au prix affiché. Option de négociation légère (–100 à –200 €) sur certaines annonces avec réponse sous 2h.</div>
+        <span class="type-tag" style="background:#dcfce7;color:#16a34a">Rapide</span>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">🚗</div>
+        <div class="type-name">Stock Direct</div>
+        <div class="type-desc">Véhicules de notre propre stock, disponibles immédiatement. Pas d'enchère, achat direct avec livraison sous 5 jours ouvrés.</div>
+        <span class="type-tag" style="background:var(--blue-lt);color:var(--blue)">Immédiat</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq-section">
+  <div class="container">
+    <h2 style="font-size:1.75rem;font-weight:800;text-align:center;margin-bottom:2.5rem">Questions fréquentes</h2>
+    <div id="faqList"></div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2>Prêt à démarrer ?</h2>
+    <p>Créez votre compte gratuitement et accédez à +5 000 véhicules dès aujourd'hui.</p>
+    <div class="cta-btns">
+      <a href="register.html" class="btn" style="background:#fff;color:var(--blue);padding:.875rem 2.5rem;font-size:1rem;border-radius:10px;font-weight:800">Créer mon compte</a>
+      <a href="catalogue.html" class="btn" style="border:2px solid rgba(255,255,255,.5);color:#fff;padding:.875rem 2.5rem;font-size:1rem;border-radius:10px">Voir le catalogue</a>
+    </div>
+  </div>
+</section>
+
+<footer style="background:var(--gray-900);color:var(--gray-400);padding:1.5rem 0;text-align:center;font-size:.8rem">
+  <div class="container">&copy; 2025 MBPRESTIGE · <a href="cgv.html" style="color:var(--gray-400)">CGV</a> · <a href="privacy.html" style="color:var(--gray-400)">Confidentialité</a></div>
+</footer>
+
+<script>
+const FAQS = [
+  {q:'Qui peut s\'inscrire sur MBPRESTIGE ?',a:'MBPRESTIGE est exclusivement réservé aux professionnels de l\'automobile : concessionnaires, marchands de véhicules, loueurs, revendeurs professionnels. Un numéro de TVA intracommunautaire valide est requis.'},
+  {q:'Quels sont les frais sur une transaction ?',a:'Une commission est appliquée sur chaque achat, selon une grille tarifaire dégressive. Elle se compose d\'une partie fixe et d\'un pourcentage du prix. Les frais sont détaillés sur la page Frais avant toute transaction.'},
+  {q:'Puis-je annuler une enchère après l\'avoir déposée ?',a:'En enchère blind : oui, l\'offre est modifiable ou annulable tant que l\'enchère est ouverte. En enchère ouverte : non, l\'offre est définitive une fois déposée. Ces règles sont clairement indiquées sur chaque fiche annonce.'},
+  {q:'Quelle est la différence entre enchère blind et ouverte ?',a:'En blind, vous ne voyez pas les autres offres. En ouverte, la meilleure offre est affichée en temps réel et vous devez surenchérir. Les deux modes ont une date/heure de clôture précise.'},
+  {q:'Comment fonctionne le niveau utilisateur (Trial / Silver / Golden) ?',a:'Le compte Trial offre un accès limité à 5 offres actives. Silver débloque les enchères illimitées avec dépôt de garantie. Golden ajoute 7 jours de délai de paiement, 15 jours de parking gratuit et une commission réduite.'},
+  {q:'Comment se déroule la livraison du véhicule ?',a:'Après paiement, vous pouvez choisir la livraison MBPRESTIGE (devis sur mesure) ou l\'enlèvement par votre propre transporteur. Dans ce cas, une Pick-Up Authorization vous est transmise avec les documents du véhicule.'},
+  {q:'Les photos sont-elles toutes disponibles ?',a:'Les premières photos sont accessibles à tous. L\'intégralité de la galerie, le rapport d\'expertise et le carpass sont accessibles aux comptes vérifiés connectés.'},
+  {q:'Que se passe-t-il si le vendeur n\'accepte pas la meilleure offre ?',a:'Même en étant le plus haut enchérisseur, le vendeur conserve le droit de refuser la vente. La fiche passe alors en statut "non attribuée" et votre offre est annulée sans frais.'},
+];
+
+document.getElementById('faqList').innerHTML = FAQS.map((f,i) => `
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(${i})" id="fq${i}">
+      <span>${f.q}</span><span class="arrow">▾</span>
+    </div>
+    <div class="faq-a" id="fa${i}">${f.a}</div>
+  </div>`).join('');
+
+function toggleFaq(i) {
+  const q = document.getElementById('fq'+i);
+  const a = document.getElementById('fa'+i);
+  const isOpen = q.classList.contains('open');
+  document.querySelectorAll('.faq-q').forEach(e=>e.classList.remove('open'));
+  document.querySelectorAll('.faq-a').forEach(e=>e.classList.remove('open'));
+  if(!isOpen){q.classList.add('open');a.classList.add('open');}
+}
+</script>
+</body>
+</html>

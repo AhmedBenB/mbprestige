@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paiement – MBPRESTIGE</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1d4ed8;--blue-dk:#1e40af;--blue-lt:#dbeafe;--green:#16a34a;--red:#dc2626;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;--radius:14px;--radius-sm:9px;--gray-300:#d1d5db;--gray-600:#4b5563;--gray-800:#1f2937}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh}
+a{color:inherit;text-decoration:none}
+.header{background:#fff;border-bottom:1.5px solid var(--gray-200);padding:0 2rem}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-size:1.1rem;font-weight:800;color:var(--blue);display:flex;align-items:center;gap:.5rem}
+.secure-badge{display:flex;align-items:center;gap:.375rem;font-size:.8rem;color:var(--gray-500)}
+.main{max-width:980px;margin:2rem auto;padding:0 1.5rem 4rem;display:grid;grid-template-columns:1fr 380px;gap:2rem;align-items:start}
+.card{background:#fff;border-radius:var(--radius);border:1.5px solid var(--gray-200);overflow:hidden}
+.card-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--gray-100);font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.625rem}
+.card-body{padding:1.5rem}
+.form-group{margin-bottom:1.125rem}
+.form-label{display:block;font-size:.78rem;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem}
+.input{width:100%;padding:.7rem 1rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-size:.875rem;color:var(--gray-900);background:#fff;transition:border-color .15s;font-family:inherit}
+.input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.12)}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+.payment-methods{display:flex;gap:.75rem;margin-bottom:1.5rem}
+.pm-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem;border:2px solid var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:.875rem;font-weight:500;color:var(--gray-700);background:#fff;transition:all .15s;font-family:inherit}
+.pm-btn.active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);font-weight:700}
+.pm-btn:hover{border-color:var(--blue)}
+.pm-icon{font-size:1.25rem}
+.card-field{background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:.875rem;color:var(--gray-400);min-height:44px;display:flex;align-items:center;gap:.5rem}
+.card-field.mock{cursor:text}
+#cardContainer{display:block}
+#ibanContainer{display:none}
+.stripe-mock{border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);padding:.75rem 1rem;background:var(--gray-50);font-size:.875rem;color:var(--gray-500);min-height:44px;display:flex;align-items:center;gap:.5rem;font-family:monospace}
+.stripe-mock input{background:none;border:none;outline:none;font-family:monospace;font-size:.875rem;width:100%;color:var(--gray-900)}
+.stripe-mock input::placeholder{color:var(--gray-400)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 1.5rem;border-radius:var(--radius-sm);font-weight:700;font-size:.95rem;cursor:pointer;border:none;transition:all .15s;font-family:inherit;width:100%}
+.btn-pay{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;box-shadow:0 4px 14px rgba(29,78,216,.35)}
+.btn-pay:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,78,216,.4)}
+.btn-pay:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.security-note{display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.75rem;color:var(--gray-400);margin-top:.875rem}
+.order-item{display:flex;align-items:center;gap:1rem;padding:.875rem 0;border-bottom:1px solid var(--gray-100)}
+.order-item:last-of-type{border-bottom:none}
+.order-img{width:72px;height:54px;border-radius:var(--radius-sm);object-fit:cover;flex-shrink:0}
+.order-details{flex:1}
+.order-name{font-size:.875rem;font-weight:600;margin-bottom:.25rem}
+.order-meta{font-size:.75rem;color:var(--gray-500)}
+.order-price{font-size:.95rem;font-weight:700;flex-shrink:0}
+.summary-line{display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;font-size:.875rem}
+.summary-line.total{border-top:2px solid var(--gray-200);margin-top:.5rem;padding-top:.875rem;font-size:1.05rem;font-weight:800}
+.summary-line.muted{color:var(--gray-500)}
+.badge-green{background:#dcfce7;color:var(--green);font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:9999px}
+.timeline{display:flex;flex-direction:column;gap:0}
+.timeline-item{display:flex;gap:.875rem;padding:.625rem 0}
+.timeline-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;margin-top:.1rem}
+.timeline-dot.done{background:#dcfce7;color:var(--green)}
+.timeline-dot.current{background:var(--blue-lt);color:var(--blue)}
+.timeline-dot.pending{background:var(--gray-100);color:var(--gray-400)}
+.timeline-content h4{font-size:.875rem;font-weight:600}
+.timeline-content p{font-size:.8rem;color:var(--gray-500);margin-top:.125rem}
+.success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.success-overlay.show{display:flex}
+.success-box{background:#fff;border-radius:var(--radius);padding:2.5rem;max-width:420px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+@media(max-width:768px){.main{grid-template-columns:1fr}.input-grid{grid-template-columns:1fr}.payment-methods{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+      MBPRESTIGE
+    </a>
+    <div class="secure-badge">🔒 Paiement 100% sécurisé · SSL</div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- GAUCHE : formulaire -->
+  <div>
+    <!-- Méthode de paiement -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-header">💳 Mode de paiement</div>
+      <div class="card-body">
+        <div class="payment-methods">
+          <button class="pm-btn active" onclick="selectPM('card', this)">
+            <span class="pm-icon">💳</span> Carte bancaire
+          </button>
+          <button class="pm-btn" onclick="selectPM('sepa', this)">
+            <span class="pm-icon">🏦</span> Virement SEPA
+          </button>
+          <button class="pm-btn" onclick="selectPM('wire', this)">
+            <span class="pm-icon">🏢</span> Virement bancaire
+          </button>
+        </div>
+
+        <!-- Carte -->
+        <div id="cardContainer">
+          <div class="form-group">
+            <label class="form-label">Numéro de carte</label>
+            <div class="stripe-mock">
+              <span>💳</span>
+              <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)">
+              <span id="cardBrand" style="font-size:1.25rem;margin-left:auto"></span>
+            </div>
+          </div>
+          <div class="input-grid">
+            <div class="form-group">
+              <label class="form-label">Date d'expiration</label>
+              <div class="stripe-mock">
+                <input type="text" id="cardExpiry" placeholder="MM / AA" maxlength="7" oninput="formatExpiry(this)">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">CVV</label>
+              <div class="stripe-mock">
+                <input type="text" id="cardCvv" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Nom sur la carte</label>
+            <input type="text" class="input" id="cardName" placeholder="JEAN DUPONT">
+          </div>
+        </div>
+
+        <!-- SEPA -->
+        <div id="sepaContainer" style="display:none">
+          <div class="form-group">
+            <label class="form-label">IBAN</label>
+            <div class="stripe-mock">
+              <input type="text" id="ibanField" placeholder="FR76 3000 6000 0112 3456 7890 189" maxlength="34" oninput="formatIban(this)">
+            </div>
+            <div style="font-size:.75rem;color:var(--gray-500);margin-top:.375rem">En fournissant votre IBAN, vous autorisez un prélèvement SEPA.</div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Titulaire du compte</label>
+            <input type="text" class="input" placeholder="Nom de votre société">
+          </div>
+        </div>
+
+        <!-- Wire -->
+        <div id="wireContainer" style="display:none">
+          <div style="background:var(--blue-lt);border-radius:var(--radius-sm);padding:1.25rem;font-size:.875rem">
+            <p style="font-weight:700;margin-bottom:.875rem;color:var(--blue)">📋 Coordonnées bancaires MBPRESTIGE</p>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:.375rem .75rem;font-size:.8rem">
+              <span style="color:var(--gray-500)">Bénéficiaire</span><strong>MBPRESTIGE SAS</strong>
+              <span style="color:var(--gray-500)">IBAN</span><strong>FR76 3000 1234 5678 9012 3456 789</strong>
+              <span style="color:var(--gray-500)">BIC</span><strong>BNPAFRPPXXX</strong>
+              <span style="color:var(--gray-500)">Référence</span><strong id="wireRef">MBP-2026-001</strong>
+            </div>
+            <div style="margin-top:.875rem;padding:.625rem;background:#fff;border-radius:6px;font-size:.75rem;color:var(--gray-600)">
+              ⚠️ Indiquez impérativement la référence en objet du virement. Délai de traitement : 1 à 3 jours ouvrés.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infos de facturation -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-header">🏢 Facturation</div>
+      <div class="card-body">
+        <div class="input-grid">
+          <div class="form-group">
+            <label class="form-label">Nom de la société</label>
+            <input type="text" class="input" placeholder="AutoPro SARL" value="Garage Dupont SARL">
+          </div>
+          <div class="form-group">
+            <label class="form-label">N° TVA</label>
+            <input type="text" class="input" placeholder="FR12345678901">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Adresse de facturation</label>
+          <input type="text" class="input" placeholder="12 rue de la Paix, 75001 Paris">
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton payer -->
+    <button class="btn btn-pay" id="payBtn" onclick="processPayment()">
+      <span id="payText">🔒 Payer l'acompte <span id="payAmount"></span></span>
+      <span id="paySpinner" style="display:none">⏳ Traitement en cours…</span>
+    </button>
+    <div class="security-note">
+      <span>🔒</span> Paiement sécurisé par Stripe · Données chiffrées SSL
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/120px-Stripe_Logo%2C_revised_2016.svg.png" height="16" alt="Stripe" style="opacity:.6">
+    </div>
+  </div>
+
+  <!-- DROITE : récapitulatif -->
+  <div>
+    <!-- Véhicule -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-header">🚗 Votre commande</div>
+      <div class="card-body">
+        <div class="order-item">
+          <img src="https://picsum.photos/seed/car1/200/150" alt="" class="order-img">
+          <div class="order-details">
+            <div class="order-name" id="orderName">BMW 320d Sport Line 2021</div>
+            <div class="order-meta" id="orderMeta">68 000 km · Diesel · BE</div>
+          </div>
+        </div>
+
+        <div style="padding-top:.5rem">
+          <div class="summary-line">
+            <span>Prix du véhicule</span>
+            <span id="sumVehicle">28 500 €</span>
+          </div>
+          <div class="summary-line muted">
+            <span>Commission MBPRESTIGE</span>
+            <span id="sumCommission">+ 862 €</span>
+          </div>
+          <div class="summary-line muted">
+            <span>Frais administratifs</span>
+            <span>+ 75 €</span>
+          </div>
+          <div class="summary-line" style="font-weight:700;color:var(--blue)">
+            <span>Acompte à régler maintenant (10 %)</span>
+            <span id="sumDeposit">2 944 €</span>
+          </div>
+          <div class="summary-line total">
+            <span>Montant total de la commande</span>
+            <span id="sumTotal">29 437 €</span>
+          </div>
+          <div class="summary-line muted">
+            <span>Reste à payer après vérification</span>
+            <span id="sumRemaining">26 493 €</span>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;background:var(--gray-50);border-radius:var(--radius-sm);padding:.75rem;font-size:.78rem;color:var(--gray-500)">
+          💡 La TVA est récupérable si vous avez sélectionné un véhicule éligible et que votre société est assujettie à la TVA.
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline post-achat -->
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="card-header">📋 Prochaines étapes</div>
+      <div class="card-body">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot current">1</div>
+            <div class="timeline-content"><h4>Paiement</h4><p>Confirmation immédiate par email</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot pending">2</div>
+            <div class="timeline-content"><h4>Traitement (24-48h)</h4><p>Vérification et préparation du dossier</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot pending">3</div>
+            <div class="timeline-content"><h4>Documents</h4><p>Facture, titre et autorisation de retrait</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot pending">4</div>
+            <div class="timeline-content"><h4>Livraison / Enlèvement</h4><p>Selon option choisie lors de la commande</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Garanties -->
+    <div style="background:#fff;border-radius:var(--radius-sm);border:1.5px solid var(--gray-200);padding:1rem">
+      <div style="display:flex;flex-direction:column;gap:.625rem">
+        <div style="display:flex;align-items:center;gap:.625rem;font-size:.8rem;color:var(--gray-700)">
+          <span style="font-size:1rem">✅</span> Remboursement si le véhicule ne correspond pas à l'annonce
+        </div>
+        <div style="display:flex;align-items:center;gap:.625rem;font-size:.8rem;color:var(--gray-700)">
+          <span style="font-size:1rem">📞</span> Support dédié 7j/7
+        </div>
+        <div style="display:flex;align-items:center;gap:.625rem;font-size:.8rem;color:var(--gray-700)">
+          <span style="font-size:1rem">🔐</span> Transaction sécurisée et tracée
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+    <h2 style="font-size:1.5rem;margin-bottom:.625rem">Acompte confirmé !</h2>
+    <p style="color:var(--gray-500);margin-bottom:1.75rem;font-size:.875rem">
+      Un email de confirmation a été envoyé à votre adresse.<br>
+      Votre dossier est en cours de traitement.
+    </p>
+    <a href="dashboard.html" style="display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 2rem;background:var(--blue);color:#fff;border-radius:var(--radius-sm);font-weight:700;font-size:.9rem">
+      📋 Suivre ma commande →
+    </a>
+    <div style="margin-top:1rem">
+      <a href="catalogue.html" style="font-size:.8rem;color:var(--blue);text-decoration:underline">Continuer les achats</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Init avec données du véhicule (depuis URL)
+function hasAccountAccess() {
+  return localStorage.getItem('mbp_has_account') === '1' || localStorage.getItem('mbp_logged_in') === '1';
+}
+
+if (!hasAccountAccess()) {
+  window.location.href = 'register.html';
+}
+
+const params = new URLSearchParams(location.search);
+const vehicleId = params.get('id') || 1;
+const VEHICLES = {
+  1:{name:'BMW 320d Sport Line 2021',meta:'68 000 km · Diesel · BE',price:28500,commission:862},
+  2:{name:'Audi A4 Business 2020',meta:'92 000 km · Diesel · DE',price:22800,commission:695},
+};
+const v = VEHICLES[vehicleId] || VEHICLES[1];
+document.getElementById('orderName').textContent = v.name;
+document.getElementById('orderMeta').textContent = v.meta;
+document.getElementById('sumVehicle').textContent = v.price.toLocaleString('fr-FR') + ' €';
+document.getElementById('sumCommission').textContent = '+ ' + v.commission.toLocaleString('fr-FR') + ' €';
+const total = v.price + v.commission + 75;
+const deposit = Math.round(total * 0.10);
+const remaining = total - deposit;
+document.getElementById('sumTotal').textContent = total.toLocaleString('fr-FR') + ' €';
+document.getElementById('sumDeposit').textContent = deposit.toLocaleString('fr-FR') + ' €';
+document.getElementById('sumRemaining').textContent = remaining.toLocaleString('fr-FR') + ' €';
+document.getElementById('payAmount').textContent = deposit.toLocaleString('fr-FR') + ' €';
+document.getElementById('wireRef').textContent = 'MBP-2026-' + vehicleId.toString().padStart(3,'0');
+
+// Mode paiement
+function selectPM(type, btn) {
+  document.querySelectorAll('.pm-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cardContainer').style.display = type === 'card' ? 'block' : 'none';
+  document.getElementById('sepaContainer').style.display = type === 'sepa' ? 'block' : 'none';
+  document.getElementById('wireContainer').style.display = type === 'wire' ? 'block' : 'none';
+}
+
+// Formatage carte
+function formatCard(inp) {
+  let v = inp.value.replace(/\D/g,'').slice(0,16);
+  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+  const brand = document.getElementById('cardBrand');
+  if(v.startsWith('4')) brand.textContent='💙';
+  else if(v.startsWith('5')) brand.textContent='🟠';
+  else if(v.startsWith('3')) brand.textContent='🟢';
+  else brand.textContent='';
+}
+function formatExpiry(inp) {
+  let v = inp.value.replace(/\D/g,'').slice(0,4);
+  if(v.length>=2) v = v.slice(0,2) + ' / ' + v.slice(2);
+  inp.value = v;
+}
+function formatIban(inp) {
+  let v = inp.value.replace(/\s/g,'').toUpperCase().slice(0,34);
+  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+
+// Paiement
+function processPayment() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  document.getElementById('payText').style.display = 'none';
+  document.getElementById('paySpinner').style.display = '';
+
+  // Simuler traitement Stripe (1.5s)
+  setTimeout(() => {
+    btn.disabled = false;
+    document.getElementById('payText').style.display = '';
+    document.getElementById('paySpinner').style.display = 'none';
+    document.getElementById('successOverlay').classList.add('show');
+  }, 1800);
+}
+</script>
+</body>
+</html>
