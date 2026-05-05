@@ -3,8 +3,13 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureClientEmailVerified;
+use App\Http\Middleware\EnsureUserRole;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withCommands([
+        __DIR__ . '/../app/Console/Commands',
+    ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -13,12 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'auction.price.access' => \App\Http\Middleware\EnsureAuctionPriceAccess::class,
-        ]);
-
-        $middleware->validateCsrfTokens(except: [
-            'stripe/webhook',
+            'client.verified' => EnsureClientEmailVerified::class,
+            'role' => EnsureUserRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

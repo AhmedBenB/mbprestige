@@ -8,20 +8,31 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SourceImport extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_RUNNING = 'running';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_FAILED = 'failed';
+
     protected $fillable = [
         'source_id',
+        'triggered_by_user_id',
+        'status',
+        'sync_limit',
+        'fetched_count',
+        'created_count',
+        'updated_count',
+        'error_count',
+        'notes',
         'started_at',
         'finished_at',
-        'status',
-        'items_found',
-        'items_created',
-        'items_updated',
-        'items_skipped',
-        'items_failed',
-        'raw_log',
     ];
 
     protected $casts = [
+        'sync_limit' => 'integer',
+        'fetched_count' => 'integer',
+        'created_count' => 'integer',
+        'updated_count' => 'integer',
+        'error_count' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
@@ -31,17 +42,13 @@ class SourceImport extends Model
         return $this->belongsTo(Source::class);
     }
 
+    public function triggeredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'triggered_by_user_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(SourceImportItem::class);
-    }
-
-    public function duration(): ?int
-    {
-        if (! $this->started_at || ! $this->finished_at) {
-            return null;
-        }
-
-        return $this->started_at->diffInSeconds($this->finished_at);
     }
 }

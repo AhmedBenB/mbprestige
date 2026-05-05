@@ -5,26 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ListingDocument extends Model
+class ListingSimilarity extends Model
 {
     protected $fillable = [
         'external_listing_id',
-        'document_type',
-        'title',
-        'file_url',
-        'file_name',
-        'file_size',
-        'mime_type',
-        'is_published',
+        'similar_external_listing_id',
+        'score',
+        'score_breakdown',
     ];
 
     protected $casts = [
-        'file_size' => 'integer',
-        'is_published' => 'boolean',
+        'score' => 'integer',
+        'score_breakdown' => 'array',
     ];
 
     public function externalListing(): BelongsTo
     {
         return $this->belongsTo(ExternalListing::class);
+    }
+
+    public function similarListing(): BelongsTo
+    {
+        return $this->belongsTo(ExternalListing::class, 'similar_external_listing_id');
     }
 }

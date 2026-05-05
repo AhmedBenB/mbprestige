@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBPRESTIGE - Imports eCarsTrade</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #111827; }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .kpi { min-width: 150px; padding: 12px; border-radius: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
+    .kpi strong { display: block; font-size: 20px; }
+    button { border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: #111827; color: white; }
+    .btn-secondary { background: #2563eb; color: white; }
+    .btn-danger { background: #b91c1c; color: white; }
+    .muted { color: #6b7280; }
+    .status { display: inline-block; padding: 4px 8px; border-radius: 8px; background: #eef2ff; font-size: 12px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: 8px 6px; font-size: 14px; }
+    .error { color: #b91c1c; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Imports eCarsTrade</h1>
+      <p class="muted">Pilotage import, validation publication et droits media/documents.</p>
+      <div class="row">
+        <button class="btn-primary" id="btn-refresh">Rafraichir</button>
+        <button class="btn-secondary" id="btn-run">Relancer import</button>
+        <button class="btn-secondary" id="btn-enqueue">Planifier import (queue)</button>
+        <input id="sync-limit" type="number" min="1" max="200" value="20">
+      </div>
+      <div id="error-box" class="error"></div>
+    </div>
+
+    <div class="card">
+      <h2>Dernier import</h2>
+      <div id="latest-import" class="muted">Chargement...</div>
+    </div>
+
+    <div class="card">
+      <h2>Statistiques annonces</h2>
+      <div class="row" id="stats-grid"></div>
+    </div>
+
+    <div class="card">
+      <h2>Gestion publication</h2>
+      <p class="muted">Saisir un ID annonce importee pour changer son statut.</p>
+      <div class="row">
+        <input id="listing-id" type="number" min="1" placeholder="ID annonce">
+        <button class="btn-secondary" id="btn-publish">Publier</button>
+        <button class="btn-danger" id="btn-unpublish">Ne pas publier</button>
+      </div>
+      <div id="publish-result" class="muted"></div>
+    </div>
+
+    <div class="card">
+      <h2>20 dernières annonces importées</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Annonce</th>
+            <th>Type</th>
+            <th>Prix</th>
+            <th>Statut</th>
+            <th>MAJ</th>
+          </tr>
+        </thead>
+        <tbody id="recent-listings-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_ORIGIN = window.location.origin;
+    const API_BASE = `${API_ORIGIN}/api/admin/imports/ecarstrade`;
+    const ADMIN_TOKEN_KEY = 'admin_token';
+
+    function getToken() {
+      return localStorage.getItem(ADMIN_TOKEN_KEY) || sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    }
+
+    async function adminFetch(path, options = {}) {
+      const token = getToken();
+      const headers = Object.assign({
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }, options.headers || {});
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(path, Object.assign({}, options, { headers }));
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.message || `Erreur HTTP ${response.status}`);
+      }
+      return payload;
+    }
+
+    function showError(msg = '') {
+      document.getElementById('error-box').textContent = msg;
+    }
+
+    function renderStats(stats) {
+      const grid = document.getElementById('stats-grid');
+      const rows = [
+        ['Total', stats.total_listings || 0],
+        ['Draft', stats.draft || 0],
+        ['Ready for review', stats.ready_for_review || 0],
+        ['Published', stats.published || 0],
+        ['Do not publish', stats.do_not_publish || 0],
+      ];
+      grid.innerHTML = rows.map(([label, value]) => `
+        <div class="kpi">
+          <span class="muted">${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join('');
+    }
+
+    function renderLatestImport(latest, source) {
+      const el = document.getElementById('latest-import');
+      if (!latest) {
+        el.innerHTML = `<p>Aucun import execute.</p>`;
+        return;
+      }
+
+      el.innerHTML = `
+        <p><span class="status">${latest.status}</span></p>
+        <p>Import #${latest.id} - limite ${latest.sync_limit}</p>
+        <p>Trouvees: ${latest.fetched_count} | Creees: ${latest.created_count} | MAJ: ${latest.updated_count} | Erreurs: ${latest.error_count}</p>
+        <p>Demarre: ${latest.started_at || '-'} | Termine: ${latest.finished_at || '-'}</p>
+        <p>Droits media/doc: ${source.rights_media ? 'OK' : 'OFF'} / ${source.rights_documents ? 'OK' : 'OFF'}</p>
+      `;
+    }
+
+    function renderRecentListings(rows) {
+      const body = document.getElementById('recent-listings-body');
+      if (!Array.isArray(rows) || rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="6" class="muted">Aucune annonce importée pour le moment.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = rows.map((row) => {
+        const title = row.title || `${row.make || ''} ${row.model || ''}`.trim() || 'Annonce';
+        const price = row.price_visible && row.price_amount !== null
+          ? `${Number(row.price_amount).toLocaleString('fr-FR')} EUR`
+          : 'Estimation';
+        return `
+          <tr>
+            <td>${row.id}</td>
+            <td>${title}</td>
+            <td>${row.listing_type || '-'}</td>
+            <td>${price}</td>
+            <td>${row.status || '-'}</td>
+            <td>${row.updated_at || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function refresh() {
+      showError('');
+      const payload = await adminFetch(API_BASE);
+      renderStats(payload.data.stats || {});
+      renderLatestImport(payload.data.latest_import || null, payload.data.source || {});
+      renderRecentListings(payload.data.recent_listings || []);
+    }
+
+    async function runNow(queue = false) {
+      showError('');
+      const limit = Number(document.getElementById('sync-limit').value || 20);
+      const endpoint = queue ? `${API_BASE}/enqueue` : `${API_BASE}/run`;
+      await adminFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ limit })
+      });
+      await refresh();
+    }
+
+    async function updatePublish(status) {
+      showError('');
+      const id = Number(document.getElementById('listing-id').value || 0);
+      if (!id) {
+        showError('Merci de saisir un ID annonce.');
+        return;
+      }
+
+      const endpoint = status === 'publish'
+        ? `${API_BASE}/listings/${id}/publish`
+        : `${API_BASE}/listings/${id}/do-not-publish`;
+      const payload = await adminFetch(endpoint, { method: 'POST' });
+      document.getElementById('publish-result').textContent = payload.message || 'Statut mis a jour.';
+      await refresh();
+    }
+
+    document.getElementById('btn-refresh').addEventListener('click', refresh);
+    document.getElementById('btn-run').addEventListener('click', () => runNow(false));
+    document.getElementById('btn-enqueue').addEventListener('click', () => runNow(true));
+    document.getElementById('btn-publish').addEventListener('click', () => updatePublish('publish'));
+    document.getElementById('btn-unpublish').addEventListener('click', () => updatePublish('unpublish'));
+
+    refresh().catch((error) => showError(error.message));
+  </script>
+</body>
+</html>

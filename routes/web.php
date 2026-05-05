@@ -1,42 +1,61 @@
 <?php
 
+use App\Http\Controllers\ClientEmailVerificationController;
+use App\Http\Controllers\PublicExternalListingController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Public\HomeController;
-use App\Http\Controllers\Public\CatalogController;
-use App\Http\Controllers\Public\VehicleController;
-use App\Http\Controllers\Public\PageController;
-use App\Http\Controllers\Webhooks\StripeWebhookController;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', function () {
+    return response()->file(public_path('index.html'));
+});
 
-Route::get('/catalogue', [CatalogController::class, 'index'])->name('catalog.index');
-Route::get('/encheres', [CatalogController::class, 'auctions'])->name('catalog.auctions');
-Route::get('/prix-fixes', [CatalogController::class, 'fixedPrices'])->name('catalog.fixed_prices');
-Route::get('/stock', [CatalogController::class, 'stock'])->name('catalog.stock');
+Route::get('/connexion', function () {
+    return response()->file(public_path('connexion_client_sourcing.html'));
+});
 
-Route::get('/vehicules/{listing:slug}', [VehicleController::class, 'show'])->name('vehicles.show');
+Route::get('/inscription', function () {
+    return redirect('/connexion?view=register');
+});
 
-Route::get('/marques', [PageController::class, 'brands'])->name('brands.index');
-Route::get('/marques/{make}', [PageController::class, 'brand'])->name('brands.show');
-Route::get('/marques/{make}/{model}', [PageController::class, 'model'])->name('brands.model');
-Route::get('/marques/{make}/{model}/{year}', [PageController::class, 'modelYear'])->name('brands.model_year');
-Route::get('/pays/{country}', [PageController::class, 'country'])->name('countries.show');
+Route::get('/demande', function () {
+    return response()->file(public_path('sourcing_auto_accueil_formulaire.html'));
+});
 
-Route::view('/comment-ca-marche', 'public.pages.how-it-works')->name('how_it_works');
-Route::view('/frais', 'public.pages.costs')->name('costs');
-Route::view('/livraison', 'public.pages.delivery')->name('delivery');
-Route::view('/inspection', 'public.pages.inspection')->name('inspection');
-Route::view('/faq', 'public.pages.faq')->name('faq');
-Route::view('/professionnels', 'public.pages.professionals')->name('professionals');
-Route::view('/contact', 'public.pages.contact')->name('contact');
-Route::view('/mentions-legales', 'public.pages.mentions-legales')->name('mentions_legales');
-Route::view('/conditions-generales', 'public.pages.conditions-generales')->name('cgv');
-Route::view('/confidentialite', 'public.pages.confidentialite')->name('privacy');
+Route::get('/espace-client', function () {
+    return response()->file(public_path('dashboard_client_sourcing.html'));
+});
 
-Route::post('/stripe/webhook', StripeWebhookController::class)
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->name('stripe.webhook');
+Route::get('/espace-garage', function () {
+    return response()->file(public_path('dashboard_admin_sourcing.html'));
+});
 
-require __DIR__ . '/auth.php';
-require __DIR__ . '/app.php';
-require __DIR__ . '/admin.php';
+Route::get('/mentions-legales', function () {
+    return response()->file(public_path('mentions-legales.html'));
+});
+
+Route::get('/confidentialite', function () {
+    return response()->file(public_path('politique-confidentialite.html'));
+});
+
+Route::get('/contact', function () {
+    return response()->file(public_path('contact.html'));
+});
+
+Route::get('/admin/imports/ecarstrade', function () {
+    return response()->file(public_path('admin_imports_ecarstrade.html'));
+});
+
+Route::get('/comment-ca-marche', function () {
+    return redirect('/#comment-ca-marche');
+});
+
+Route::get('/catalogue', function () {
+    return redirect('/demande');
+});
+
+Route::get('/vehicules/{identifier}', [PublicExternalListingController::class, 'show']);
+
+Route::get('/client/email/verify', [ClientEmailVerificationController::class, 'notice'])
+    ->name('verification.notice');
+
+Route::get('/client/email/verify/{id}/{hash}', [ClientEmailVerificationController::class, 'verify'])
+    ->name('verification.verify');
