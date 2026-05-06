@@ -96,11 +96,15 @@ class AdminEcarsTradeImportController extends Controller
     public function run(Request $request, EcarsTradeImporter $importer): JsonResponse
     {
         $limit = max(1, min(200, (int) $request->input('limit', config('ecarstrade.import.sync_limit', 20))));
+        $autoPublish = filter_var(
+            $request->input('auto_publish', config('ecarstrade.import.auto_publish', false)),
+            FILTER_VALIDATE_BOOLEAN
+        );
 
         /** @var User $user */
         $user = $request->user();
 
-        $import = $importer->run($user, $limit);
+        $import = $importer->run($user, $limit, $autoPublish);
 
         return response()->json([
             'message' => 'Import eCarsTrade termine.',
@@ -118,11 +122,18 @@ class AdminEcarsTradeImportController extends Controller
     public function enqueue(Request $request): JsonResponse
     {
         $limit = max(1, min(200, (int) $request->input('limit', config('ecarstrade.import.sync_limit', 20))));
-        SyncEcarsTradeListingsJob::dispatch($limit);
+        $autoPublish = filter_var(
+            $request->input('auto_publish', config('ecarstrade.import.auto_publish', false)),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        SyncEcarsTradeListingsJob::dispatch($limit, $autoPublish);
 
         return response()->json([
             'message' => 'Import eCarsTrade planifie.',
-            'data' => ['limit' => $limit],
+            'data' => [
+                'limit' => $limit,
+                'auto_publish' => $autoPublish,
+            ],
         ]);
     }
 

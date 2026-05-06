@@ -15,11 +15,12 @@ class SyncEcarsTradeListingsJob implements ShouldQueue
 
     public function __construct(
         public readonly int $limit = 20,
+        public readonly bool $autoPublish = false,
     ) {
     }
 
     public function handle(EcarsTradeImporter $importer): void
     {
-        $importer->run(triggeredBy: null, limit: $this->limit);
+        $importer->run(triggeredBy: null, limit: $this->limit, autoPublish: $this->autoPublish);
     }
 }

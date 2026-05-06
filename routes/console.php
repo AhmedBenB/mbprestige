@@ -377,6 +377,13 @@ Artisan::command(
     }
 )->purpose('Teste exactement le flux admin d une recherche sauvegardee via le compte source organisation');
 
-Schedule::command('ecarstrade:sync --limit=20')
-    ->everyThirtyMinutes()
-    ->withoutOverlapping();
+if ((bool) config('ecarstrade.import.enabled', true)) {
+    $syncLimit = max(1, (int) config('ecarstrade.import.sync_limit', 20));
+    $everyMinutes = max(5, min(59, (int) config('ecarstrade.import.sync_every_minutes', 30)));
+    $autoPublish = (bool) config('ecarstrade.import.auto_publish', false);
+    $command = 'ecarstrade:sync --limit=' . $syncLimit . ($autoPublish ? ' --publish' : '');
+
+    Schedule::command($command)
+        ->cron("*/{$everyMinutes} * * * *")
+        ->withoutOverlapping();
+}

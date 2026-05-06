@@ -76,6 +76,7 @@ return [
         'enabled' => filter_var(env('ECARSTRADE_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
         'sync_limit' => (int) env('ECARSTRADE_SYNC_LIMIT', 20),
         'sync_every_minutes' => (int) env('ECARSTRADE_SYNC_EVERY_MINUTES', 30),
+        'auto_publish' => filter_var(env('ECARSTRADE_AUTO_PUBLISH', false), FILTER_VALIDATE_BOOLEAN),
         'publish_media' => filter_var(env('ECARSTRADE_PUBLISH_MEDIA', true), FILTER_VALIDATE_BOOLEAN),
         'publish_documents' => filter_var(env('ECARSTRADE_PUBLISH_DOCUMENTS', true), FILTER_VALIDATE_BOOLEAN),
         'margin_min' => (float) env('ECARSTRADE_MARGIN_MIN', 2000),

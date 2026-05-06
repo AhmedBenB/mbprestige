@@ -7,15 +7,18 @@ use Illuminate\Console\Command;
 
 class SyncEcarsTradeListings extends Command
 {
-    protected $signature = 'ecarstrade:sync {--limit=20 : Nombre maximal d\'annonces a importer}';
+    protected $signature = 'ecarstrade:sync
+        {--limit=20 : Nombre maximal d\'annonces a importer}
+        {--publish : Publier automatiquement les annonces ready_for_review}';
     protected $description = 'Synchronise les annonces eCarsTrade (import brut + normalisation + estimation + similarites)';
 
     public function handle(EcarsTradeImporter $importer): int
     {
         $limit = max(1, (int) $this->option('limit'));
-        $this->info("Demarrage import eCarsTrade (limit={$limit})...");
+        $publish = (bool) $this->option('publish');
+        $this->info("Demarrage import eCarsTrade (limit={$limit}, auto_publish=" . ($publish ? 'on' : 'off') . ')...');
 
-        $import = $importer->run(triggeredBy: null, limit: $limit);
+        $import = $importer->run(triggeredBy: null, limit: $limit, autoPublish: $publish);
 
         $this->line('Import ID: ' . $import->id);
         $this->line('Statut: ' . $import->status);
