@@ -41,6 +41,7 @@ class EcarsTradeImporter
                     'margin_min' => (float) config('ecarstrade.import.margin_min', 2000),
                     'margin_max' => (float) config('ecarstrade.import.margin_max', 3000),
                     'sync_every_minutes' => (int) config('ecarstrade.import.sync_every_minutes', 30),
+                    'auto_publish' => (bool) config('ecarstrade.import.auto_publish', false),
                     'rights_media' => true,
                     'rights_documents' => true,
                 ],
@@ -51,10 +52,11 @@ class EcarsTradeImporter
     /**
      * @return SourceImport
      */
-    public function run(?User $triggeredBy = null, ?int $limit = null): SourceImport
+    public function run(?User $triggeredBy = null, ?int $limit = null, ?bool $autoPublish = null): SourceImport
     {
         $source = $this->ensureSource();
         $syncLimit = max(1, $limit ?? (int) config('ecarstrade.import.sync_limit', 20));
+        $autoPublishEnabled = $autoPublish ?? (bool) config('ecarstrade.import.auto_publish', false);
 
         /** @var SourceImport $import */
         $import = SourceImport::query()->create([
@@ -69,6 +71,7 @@ class EcarsTradeImporter
         $createdCount = 0;
         $updatedCount = 0;
         $errorCount = 0;
+        $autoPublishedCount = 0;
 
         try {
             $listings = $this->client->fetchLatestListings($source, $syncLimit);
@@ -76,10 +79,13 @@ class EcarsTradeImporter
             foreach ($listings as $listing) {
                 try {
                     $result = $this->persistListing($source, $import, $listing);
-                    if ($result === 'created') {
+                    if ($result['status'] === 'created') {
                         $createdCount++;
-                    } elseif ($result === 'updated') {
+                    } elseif ($result['status'] === 'updated') {
                         $updatedCount++;
+                    }
+                    if ($autoPublishEnabled && $this->publishIfEligible($result['listing'])) {
+                        $autoPublishedCount++;
                     }
                 } catch (\Throwable $exception) {
                     $errorCount++;
@@ -94,7 +100,7 @@ class EcarsTradeImporter
                 'updated_count' => $updatedCount,
                 'error_count' => $errorCount,
                 'finished_at' => now(),
-                'notes' => 'Import termine.',
+                'notes' => 'Import termine. Auto-publiees: ' . $autoPublishedCount . '.',
             ]);
         } catch (\Throwable $exception) {
             $import->update([
@@ -115,20 +121,34 @@ class EcarsTradeImporter
     }
 
     /**
-     * @return 'created'|'updated'
+     * @return array{status: 'created'|'updated', listing: ExternalListing}
      */
-    private function persistListing(Source $source, SourceImport $import, EcarsTradeListingData $listing): string
+    private function persistListing(Source $source, SourceImport $import, EcarsTradeListingData $listing): array
     {
         $normalized = $this->mapper->map($listing);
         $externalId = (string) $normalized['external_id'];
 
-        return DB::transaction(function () use ($source, $import, $listing, $normalized, $externalId): string {
+        return DB::transaction(function () use ($source, $import, $listing, $normalized, $externalId): array {
             $existing = ExternalListing::query()
                 ->where('source_id', $source->id)
                 ->where('external_id', $externalId)
                 ->first();
 
             $status = $existing ? 'updated' : 'created';
+            $attributes = array_merge(
+                Arr::except($normalized, ['external_id']),
+                ['source_id' => $source->id]
+            );
+
+            if ($existing && in_array($existing->status, [
+                ExternalListing::STATUS_PUBLISHED,
+                ExternalListing::STATUS_DO_NOT_PUBLISH,
+            ], true)) {
+                $attributes['status'] = $existing->status;
+                $attributes['published_at'] = $existing->status === ExternalListing::STATUS_PUBLISHED
+                    ? ($existing->published_at ?? now())
+                    : null;
+            }
 
             /** @var ExternalListing $externalListing */
             $externalListing = ExternalListing::query()->updateOrCreate(
@@ -136,10 +156,7 @@ class EcarsTradeImporter
                     'source_id' => $source->id,
                     'external_id' => $externalId,
                 ],
-                array_merge(
-                    Arr::except($normalized, ['external_id']),
-                    ['source_id' => $source->id]
-                )
+                $attributes
             );
 
             SourceImportItem::query()->updateOrCreate(
@@ -161,8 +178,32 @@ class EcarsTradeImporter
             $this->syncPriceEstimate($externalListing);
             $this->similarityService->persistTopSimilarities($externalListing);
 
-            return $status;
+            return [
+                'status' => $status,
+                'listing' => $externalListing,
+            ];
         });
+    }
+
+    private function publishIfEligible(ExternalListing $listing): bool
+    {
+        if (in_array($listing->status, [
+            ExternalListing::STATUS_DO_NOT_PUBLISH,
+            ExternalListing::STATUS_PUBLISHED,
+        ], true)) {
+            return false;
+        }
+
+        if ($listing->status !== ExternalListing::STATUS_READY_FOR_REVIEW) {
+            return false;
+        }
+
+        $listing->update([
+            'status' => ExternalListing::STATUS_PUBLISHED,
+            'published_at' => $listing->published_at ?? now(),
+        ]);
+
+        return true;
     }
 
     /**
