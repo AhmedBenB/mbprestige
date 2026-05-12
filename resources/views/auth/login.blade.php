@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Connexion – MBPRESTIGE')
+@section('title', 'Connexion - MBPRESTIGE')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
@@ -10,7 +10,7 @@
                 MBPRESTIGE
             </a>
             <h1 class="text-2xl font-bold mt-4 text-gray-900">Connexion</h1>
-            <p class="text-gray-500 text-sm mt-1">Accédez à votre espace professionnel</p>
+            <p class="text-gray-500 text-sm mt-1">Connectez-vous avec votre email et votre mot de passe</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -24,18 +24,21 @@
 
             <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
                 @csrf
+
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Email professionnel</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus
                            class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 @error('email') border-red-400 @enderror"
-                           placeholder="vous@societe.fr">
+                           placeholder="vous@example.com">
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
                     <input type="password" name="password" required
                            class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="••••••••">
+                           placeholder="********">
                 </div>
+
                 <div class="flex items-center justify-between">
                     <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                         <input type="checkbox" name="remember" class="rounded text-blue-600">
@@ -45,6 +48,7 @@
                         Mot de passe oublié ?
                     </a>
                 </div>
+
                 <button type="submit"
                         class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl text-sm transition-colors">
                     Se connecter
@@ -53,7 +57,7 @@
 
             <div class="mt-6 text-center text-sm text-gray-500">
                 Pas encore de compte ?
-                <a href="{{ route('register') }}" class="text-blue-700 font-semibold hover:underline">S'inscrire</a>
+                <a href="{{ route('register') }}" class="text-blue-700 font-semibold hover:underline">Inscrivez-vous</a>
             </div>
         </div>
     </div>

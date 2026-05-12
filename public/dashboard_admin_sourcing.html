@@ -1,0 +1,2983 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBPRESTIGE - Dashboard Admin</title>
+  <link rel="stylesheet" href="css/dashboard_admin_sourcing.css?v=20260415c">
+</head>
+<body>
+  <div class="page">
+    <section id="auth-shell" class="auth-shell visible">
+      <div class="auth-card">
+        <div class="eyebrow">Admin</div>
+        <h1 class="auth-title">Connexion au sourcing</h1>
+        <p class="auth-sub">Connecte-toi avec ton email, ton mot de passe et ton code administrateur pour consulter tes demandes et tes validations.</p>
+        <div id="auth-error" class="auth-error"></div>
+        <div id="auth-success" class="auth-success"></div>
+        <div id="auth-debug" class="auth-debug"></div>
+        <form id="admin-login-form">
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" autocomplete="username" placeholder="admin@example.com" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Mot de passe</label>
+            <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+          </div>
+          <div class="field">
+            <label for="login-admin-code">Code administrateur</label>
+            <input id="login-admin-code" type="text" placeholder="Ex. ADM123456">
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:10px;font-weight:600;margin-bottom:0;">
+              <input id="login-remember" type="checkbox" style="width:auto;">
+              <span>Rester connect&eacute; sur cet appareil</span>
+            </label>
+          </div>
+          <button id="login-btn" class="btn full-width" type="submit">Se connecter</button>
+        </form>
+        <div id="admin-login-links" class="link-row" style="margin-top:16px;">
+          Mot de passe oubli&eacute; ? <a href="#" id="admin-go-forgot-link">R&eacute;initialiser mon mot de passe</a>
+        </div>
+
+        <div id="admin-forgot-shell" class="auth-alt">
+          <form id="admin-forgot-form">
+            <div class="field">
+              <label for="admin-forgot-email">Email administrateur</label>
+              <input id="admin-forgot-email" type="email" autocomplete="email" placeholder="admin@example.com" required>
+            </div>
+            <button id="admin-forgot-btn" class="btn full-width" type="submit">Envoyer le lien de r&eacute;initialisation</button>
+          </form>
+          <div class="link-row" style="margin-top:16px;">
+            <a href="#" id="admin-back-login-link">Revenir &agrave; la connexion</a>
+          </div>
+        </div>
+
+        <div id="admin-reset-shell" class="auth-alt">
+          <form id="admin-reset-form">
+            <input id="admin-reset-token" type="hidden">
+            <div class="field">
+              <label for="admin-reset-email">Email administrateur</label>
+              <input id="admin-reset-email" type="email" autocomplete="email" required>
+            </div>
+            <div class="field">
+              <label for="admin-reset-password">Nouveau mot de passe</label>
+              <input id="admin-reset-password" type="password" autocomplete="new-password" placeholder="8 caract&egrave;res minimum" required>
+            </div>
+            <div class="field">
+              <label for="admin-reset-password-confirmation">Confirmer le mot de passe</label>
+              <input id="admin-reset-password-confirmation" type="password" autocomplete="new-password" placeholder="Retape le mot de passe" required>
+            </div>
+            <button id="admin-reset-btn" class="btn full-width" type="submit">Mettre &agrave; jour mon mot de passe</button>
+          </form>
+          <div class="link-row" style="margin-top:16px;">
+            <a href="#" id="admin-reset-back-login-link">Revenir &agrave; la connexion</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="dash" class="dash-shell">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="logo">Auto<span>Sourcing</span></div>
+          <div class="topbar-badge">Back-office priv&eacute;</div>
+          <nav class="nav">
+            <button class="nav-btn active" data-section="overview" onclick="showSection('overview', this)">Vue d&rsquo;ensemble</button>
+            <button class="nav-btn" data-section="demandes" onclick="showSection('demandes', this)">Demandes clients</button>
+            <button class="nav-btn" data-section="resultats" onclick="showSection('resultats', this)">R&eacute;sultats source</button>
+            <button class="nav-btn" data-section="fiche" onclick="showSection('fiche', this)">Fiche candidat</button>
+            <button class="nav-btn" data-section="params" onclick="showSection('params', this)">Param&egrave;tres</button>
+          </nav>
+        </div>
+        <div class="topbar-right">
+          <button class="btn-secondary" type="button" onclick="runAllSearches()">Scan manuel</button>
+          <button id="admin-profile-trigger" class="admin-chip" type="button" onclick="toggleAdminProfilePanel()" aria-expanded="false">
+            <span id="admin-avatar" class="avatar">A</span>
+            <span class="admin-chip-text">
+              <span id="admin-display-name" class="admin-chip-name">Mon compte</span>
+              <span id="admin-email" class="admin-chip-mail">admin@example.com</span>
+            </span>
+          </button>
+          <button class="btn-ghost" type="button" onclick="logoutAdmin()">D&eacute;connexion</button>
+        </div>
+      </div>
+
+      <section id="admin-profile-panel" class="card hidden" style="margin-bottom:18px;">
+        <div class="profile-head">
+          <div>
+            <div class="card-title">Mon compte</div>
+            <div class="card-subtitle">Retrouve tes informations administrateur et mets &agrave; jour ton mot de passe depuis cet espace.</div>
+          </div>
+          <button class="btn-secondary" type="button" onclick="closeAdminProfilePanel()">Fermer</button>
+        </div>
+
+        <div class="account-grid">
+          <div class="settings-group" style="margin-bottom:0;">
+            <h3>Informations du compte</h3>
+            <div id="admin-profile-error" class="panel-error" style="display:none;"></div>
+            <div id="admin-profile-success" class="auth-success" style="display:none;"></div>
+            <form id="admin-profile-form" style="display:grid;gap:12px;">
+              <div class="field">
+                <label for="account-admin-first-name">Pr&eacute;nom</label>
+                <input id="account-admin-first-name" type="text" maxlength="120" required>
+              </div>
+              <div class="field">
+                <label for="account-admin-last-name">Nom</label>
+                <input id="account-admin-last-name" type="text" maxlength="120" required>
+              </div>
+              <div class="field">
+                <label for="account-admin-email">Email</label>
+                <input id="account-admin-email" type="email" maxlength="190" required>
+              </div>
+              <div class="field">
+                <label for="account-admin-phone">T&eacute;l&eacute;phone</label>
+                <input id="account-admin-phone" type="tel" maxlength="40" placeholder="+33 6 00 00 00 00">
+              </div>
+              <div class="action-row">
+                <button id="admin-profile-btn" class="btn-secondary" type="submit">Mettre &agrave; jour mon profil</button>
+              </div>
+            </form>
+            <div class="field readonly-field">
+                <label for="account-admin-role">R&ocirc;le</label>
+              <input id="account-admin-role" type="text" readonly>
+            </div>
+            <div class="field readonly-field">
+              <label for="account-admin-organization">Organisation</label>
+              <input id="account-admin-organization" type="text" readonly>
+            </div>
+          </div>
+
+          <div class="settings-group" style="margin-bottom:0;">
+            <h3>S&eacute;curit&eacute; du compte</h3>
+            <div id="admin-password-error" class="panel-error" style="display:none;"></div>
+            <div id="admin-password-success" class="auth-success" style="display:none;"></div>
+            <form id="admin-password-form" style="display:grid;gap:12px;">
+              <div class="field">
+                <label for="admin-current-password">Mot de passe actuel</label>
+                <input id="admin-current-password" type="password" autocomplete="current-password" required>
+              </div>
+              <div class="field">
+                <label for="admin-new-password">Nouveau mot de passe</label>
+                <input id="admin-new-password" type="password" autocomplete="new-password" minlength="8" required>
+              </div>
+              <div class="field">
+                <label for="admin-new-password-confirmation">Confirmation du nouveau mot de passe</label>
+                <input id="admin-new-password-confirmation" type="password" autocomplete="new-password" minlength="8" required>
+              </div>
+              <div class="action-row">
+                <button id="admin-password-btn" class="btn" type="submit">Mettre &agrave; jour mon mot de passe</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="settings-group" style="margin-top:16px;margin-bottom:0;">
+          <h3>Connexion eCarsTrade du garage</h3>
+          <div class="card-subtitle">Ces identifiants sont propres &agrave; ton garage et servent &agrave; toutes les recherches eCarsTrade de cette organisation.</div>
+          <div id="ecarstrade-info" class="auth-debug" style="display:none;"></div>
+          <div id="ecarstrade-error" class="panel-error" style="display:none;"></div>
+          <div id="ecarstrade-success" class="auth-success" style="display:none;"></div>
+          <form id="ecarstrade-account-form" style="display:grid;gap:12px;">
+            <div class="grid-2" style="grid-template-columns:1fr 1fr;margin-bottom:0;">
+              <div class="field">
+                <label for="ecarstrade-login-email">Email de connexion</label>
+                <input id="ecarstrade-login-email" type="email" maxlength="190" placeholder="garage@example.com">
+              </div>
+              <div class="field">
+                <label for="ecarstrade-login-username">Identifiant eCarsTrade</label>
+                <input id="ecarstrade-login-username" type="text" maxlength="190" placeholder="Seulement si diff&eacute;rent de l&rsquo;email">
+              </div>
+              <div class="field">
+                <label for="ecarstrade-password">Mot de passe eCarsTrade</label>
+                <input id="ecarstrade-password" type="password" autocomplete="new-password" placeholder="Laisse vide pour conserver le mot de passe actuel">
+              </div>
+              <div class="field">
+                <label for="ecarstrade-base-url">URL de base</label>
+                <input id="ecarstrade-base-url" type="url" placeholder="https://fr.ecarstrade.com">
+              </div>
+            </div>
+
+            <div class="grid-2" style="grid-template-columns:1fr 1fr;margin-bottom:0;">
+              <div class="field readonly-field">
+                <label for="ecarstrade-status">Etat de la connexion</label>
+                <input id="ecarstrade-status" type="text" readonly>
+              </div>
+              <div class="field readonly-field">
+                <label for="ecarstrade-last-check">Dernier test</label>
+                <input id="ecarstrade-last-check" type="text" readonly>
+              </div>
+            </div>
+
+            <div class="action-row">
+              <button id="ecarstrade-save-btn" class="btn-secondary" type="submit">Enregistrer les identifiants</button>
+              <button id="ecarstrade-test-btn" class="btn" type="button" onclick="testEcarsTradeAccount()">Tester la connexion</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <div id="panel-error" class="panel-error"></div>
+
+      <section id="s-overview" class="section visible">
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Recherches actives</div>
+            <div id="kpi-active-searches" class="kpi-value blue">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Candidats du jour</div>
+            <div id="kpi-today-candidates" class="kpi-value green">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Priorites hautes</div>
+            <div id="kpi-high-priority" class="kpi-value amber">0</div>
+          </div>
+          <div class="kpi">
+          <div class="kpi-label">Alertes envoy&eacute;es</div>
+            <div id="kpi-alerts-sent" class="kpi-value blue">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Rejets automatiques</div>
+            <div id="kpi-auto-rejected" class="kpi-value red">0</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Priorites hautes</div>
+                <div class="card-subtitle">Clique pour ouvrir une fiche et valider manuellement.</div>
+              </div>
+            </div>
+            <div id="priority-list" class="stack">
+              <div class="empty-state">Aucune priorité pour le moment.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Alertes récentes</div>
+                <div class="card-subtitle">Emails, SMS et traces internes de tes envois.</div>
+              </div>
+            </div>
+            <div id="alerts-list" class="stack">
+              <div class="empty-state">Aucune alerte récente.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Historique des scans</div>
+              <div class="card-subtitle">Runs récents et statuts de traitement.</div>
+            </div>
+          </div>
+          <div id="scan-history" class="stack">
+            <div class="empty-state">Aucun run récent.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-demandes" class="section">
+        <div class="card">
+          <div class="toolbar">
+            <div>
+              <div class="card-title">Demandes clients</div>
+              <div class="card-subtitle">Demandes recues via le formulaire public.</div>
+            </div>
+            <div class="toolbar-group">
+              <select id="requests-filter-status" onchange="loadRequests()">
+                <option value="">Tous les statuts</option>
+                <option value="new">Nouveau</option>
+                <option value="active">Actif</option>
+                <option value="paused">Pause</option>
+                <option value="completed">Clôture</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Recherche</th>
+                  <th>Budget</th>
+                  <th>Dernier scan</th>
+                  <th>Statut</th>
+                  <th>Consentements</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requests-body">
+                <tr><td colspan="7">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-resultats" class="section">
+        <div class="card">
+          <div class="toolbar">
+            <div>
+              <div class="card-title">R&eacute;sultats source</div>
+              <div class="card-subtitle">Annonces issues des recherches priv&eacute;es.</div>
+            </div>
+            <div class="toolbar-group">
+              <select id="filter-decision" onchange="filterTable()">
+                <option value="">Toutes les d&eacute;cisions</option>
+                <option value="candidate">Candidat</option>
+                <option value="manual_review">R&eacute;vision</option>
+                <option value="approved">Approuv&eacute;</option>
+                <option value="rejected">Rejeté</option>
+                <option value="on_hold">En attente</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vehicule</th>
+                  <th>Prix achat</th>
+                  <th>Co&ucirc;t total</th>
+                  <th>Marge</th>
+                  <th>Score</th>
+                  <th>Documents</th>
+                  <th>Source</th>
+                  <th>Decision</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="results-body">
+                <tr><td colspan="9">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-fiche" class="section">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div id="match-title" class="card-title">Aucune fiche ouverte</div>
+              <div id="match-subtitle" class="card-subtitle">S&eacute;lectionne une annonce depuis la vue d&rsquo;ensemble ou les r&eacute;sultats.</div>
+            </div>
+            <span id="match-badge" class="badge badge-candidate">Candidat</span>
+          </div>
+
+          <div class="action-row">
+            <button class="btn" type="button" onclick="showModal('approve')">Approuver</button>
+            <button class="btn-secondary" type="button" onclick="showModal('wait')">Mettre en attente</button>
+            <button class="btn-danger" type="button" onclick="showModal('reject')">Rejetér</button>
+            <button class="btn-ghost" type="button" onclick="showModal('shared')">Marquer comme envoy&eacute; au client</button>
+          </div>
+
+          <div class="detail-grid">
+            <div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title">Vue globale de la demande</div>
+                <div class="card-subtitle">Coordonn&eacute;es du client, crit&egrave;res demand&eacute;s et contexte de recherche.</div>
+                <div id="request-summary-list" class="detail-list">
+                  <div class="empty-state" style="grid-column:1/-1;">Ouvre une demande ou un r&eacute;sultat pour afficher la fiche client compl&egrave;te.</div>
+                </div>
+              </div>
+
+              <div class="detail-list">
+                <div class="detail-item">
+                  <strong>COC</strong>
+                  <span id="doc-coc" class="tag tag-unknown">Inconnu</span>
+                </div>
+                <div class="detail-item">
+                  <strong>Carnet d&rsquo;entretien</strong>
+                  <span id="doc-maintenance" class="tag tag-unknown">Inconnu</span>
+                </div>
+                <div class="detail-item">
+                  <strong>Historique</strong>
+                  <span id="doc-history" class="tag tag-unknown">Inconnu</span>
+                </div>
+                <div class="detail-item">
+                  <strong>TVA d&eacute;ductible</strong>
+                  <span id="doc-vat" class="tag tag-unknown">Inconnue</span>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:16px; margin-bottom:16px;">
+                <div class="card-title">Commentaire client</div>
+                <div id="client-comment-box" class="empty-state" style="margin-top:12px;">Aucun commentaire client pour le moment.</div>
+              </div>
+
+              <div class="card" style="margin-top:16px; margin-bottom:0;">
+                <div class="card-title">R&eacute;sum&eacute; admin</div>
+                <div class="card-subtitle" style="margin-bottom:12px;">Renseigne le r&eacute;sum&eacute; et les notes avant validation.</div>
+                <div class="field">
+                  <label for="admin-summary-input">R&eacute;sum&eacute; admin</label>
+                  <textarea id="admin-summary-input" placeholder="Ex. dossier propre, docs complets, bon candidat pour prise de contact."></textarea>
+                </div>
+                <div class="field" style="margin-bottom:0;">
+                  <label for="review-notes-input">Notes internes</label>
+                  <textarea id="review-notes-input" placeholder="Ex. photos &agrave; envoyer au client par email, v&eacute;rifier un point demain."></textarea>
+                </div>
+              </div>
+
+              <div class="history-box">
+                <div class="card" style="margin-bottom:16px;">
+                  <div class="card-title">Historique de recherche</div>
+                  <div id="search-run-history" class="stack" style="margin-top:12px;">
+                    <div class="empty-state">Aucun historique de run disponible.</div>
+                  </div>
+                </div>
+
+                <div class="card" style="margin-bottom:0;">
+                  <div class="card-title">Historique de d&eacute;cision</div>
+                  <div id="decision-history" class="stack" style="margin-top:12px;">
+                    <div class="empty-state">Aucun historique disponible.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title">Fiche eCarsTrade</div>
+                <div class="card-subtitle" style="margin-top:6px;">Lien source, r&eacute;f&eacute;rence annonce et r&eacute;sum&eacute; remont&eacute; par la plateforme.</div>
+                <div id="source-summary-list" class="detail-list" style="margin-top:12px;">
+                  <div class="empty-state" style="grid-column:1/-1;">Aucune annonce source li&eacute;e pour le moment.</div>
+                </div>
+                <div id="source-link-box" class="empty-state" style="margin-top:12px;">Le lien source appara&icirc;tra ici d&egrave;s qu&rsquo;une annonce sera ouverte.</div>
+              </div>
+
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title">Annonces eCarsTrade compatibles</div>
+                <div class="card-subtitle" style="margin-top:6px;">Toutes les annonces sous budget, avec priorit&eacute; aux annonces situ&eacute;es entre 2 000 et 3 000 EUR sous le budget client, tri&eacute;es d&rsquo;abord par ench&egrave;res puis par prix fixes.</div>
+                <div id="candidate-listings" class="candidate-listings-box">
+                  <div class="empty-state">Aucune annonce compatible disponible pour cette demande.</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title">Calcul financier</div>
+                <div class="pricing-list" style="margin-top:12px;">
+                  <div class="pricing-row"><span>Prix achat</span><strong id="price-buy">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Frais plateforme</span><strong id="price-platform">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Transport</span><strong id="price-transport">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Pr&eacute;paration</span><strong id="price-prep">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Frais admin</span><strong id="price-admin">0 EUR</strong></div>
+                  <div class="pricing-row"><span>R&eacute;serve garantie</span><strong id="price-reserve">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Marge de s&eacute;curit&eacute;</span><strong id="price-buffer">0 EUR</strong></div>
+                  <div class="pricing-row total"><span>Co&ucirc;t total</span><strong id="price-total">0 EUR</strong></div>
+                  <div class="pricing-row"><span>Estimation revente</span><strong id="price-resale">0 EUR</strong></div>
+                  <div class="pricing-row margin"><span>Marge estim&eacute;e</span><strong id="price-margin">0 EUR</strong></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-bottom:0;">
+                <div class="card-title">Score interne</div>
+                <div class="card-subtitle" style="margin-top:6px;">Aide au tri, la d&eacute;cision finale reste manuelle.</div>
+                <div id="match-score" style="font-size:34px; font-weight:700; color:var(--blue-600); margin-top:12px;">0 / 100</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-params" class="section">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Param&egrave;tres m&eacute;tier</div>
+              <div class="card-subtitle">Frais, seuils et horaires de scan.</div>
+            </div>
+            <button class="btn" type="button" onclick="saveSettings()">Enregistrer</button>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-group">
+              <h3>Frais</h3>
+              <div class="field">
+                <label for="setting-platform-fee">Frais plateforme</label>
+                <input id="setting-platform-fee" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="setting-transport-cost">Transport</label>
+                <input id="setting-transport-cost" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="setting-prep-cost">Pr&eacute;paration</label>
+                <input id="setting-prep-cost" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="setting-admin-cost">Frais admin</label>
+                <input id="setting-admin-cost" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="setting-warranty-reserve">R&eacute;serve garantie</label>
+                <input id="setting-warranty-reserve" type="number" min="0" step="1">
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label for="setting-safety-buffer">Marge de s&eacute;curit&eacute;</label>
+                <input id="setting-safety-buffer" type="number" min="0" step="1">
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Seuils</h3>
+              <div class="field">
+                <label for="setting-reject-below-margin">Rejet sous marge</label>
+                <input id="setting-reject-below-margin" type="number" min="0" step="1">
+              </div>
+              <div class="field">
+                <label for="setting-candidate-from-margin">Candidat &agrave; partir de</label>
+                <input id="setting-candidate-from-margin" type="number" min="0" step="1">
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label for="setting-priority-from-margin">Priorit&eacute; &agrave; partir de</label>
+                <input id="setting-priority-from-margin" type="number" min="0" step="1">
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>Horaires</h3>
+              <div class="field">
+                <label for="setting-scan-morning">Scan matin</label>
+                <input id="setting-scan-morning" type="time">
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label for="setting-scan-evening">Scan soir</label>
+                <input id="setting-scan-evening" type="time">
+              </div>
+            </div>
+          </div>
+
+          <div class="partner-section">
+            <div class="settings-group">
+              <h3>Acc&egrave;s partenaire</h3>
+              <div id="partner-accèss-summary" class="detail-grid">
+                <div class="detail-item">
+                  <strong>Role</strong>
+                  <span>Chargement...</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="partner-create-group" class="settings-group hidden">
+              <div class="card-header" style="padding:0; margin-bottom:12px;">
+                <div>
+                  <h3 style="margin-bottom:4px;">Cr&eacute;er un admin partenaire</h3>
+                  <div class="card-subtitle">Cr&eacute;ation d&rsquo;un garage ou revendeur avec son propre code client.</div>
+                </div>
+                <button class="btn" type="button" onclick="createPartnerAdmin()">Cr&eacute;er</button>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="partner-organization-name">Nom du garage / partenaire</label>
+                  <input id="partner-organization-name" type="text" placeholder="Ex. Garage Dupont">
+                </div>
+                <div class="field">
+                  <label for="partner-organization-slug">Slug public (optionnel)</label>
+                  <input id="partner-organization-slug" type="text" placeholder="garage-dupont">
+                </div>
+                <div class="field">
+                  <label for="partner-organization-location">Localisation</label>
+                  <input id="partner-organization-location" type="text" placeholder="Ex. Lyon, France">
+                </div>
+                <div class="field">
+                  <label for="partner-organization-description">Description</label>
+                  <input id="partner-organization-description" type="text" placeholder="Ex. Sp&eacute;cialiste VO premium et utilitaires">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-first-name">Pr&eacute;nom admin</label>
+                  <input id="partner-admin-first-name" type="text" placeholder="Jean">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-last-name">Nom admin</label>
+                  <input id="partner-admin-last-name" type="text" placeholder="Dupont">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-email">Email admin</label>
+                  <input id="partner-admin-email" type="email" placeholder="garage@example.com">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-phone">T&eacute;l&eacute;phone admin</label>
+                  <input id="partner-admin-phone" type="tel" placeholder="+33612345678">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-password">Mot de passe</label>
+                  <input id="partner-admin-password" type="password" placeholder="8 caractères minimum">
+                </div>
+                <div class="field">
+                  <label for="partner-admin-password-confirmation">Confirmation mot de passe</label>
+                  <input id="partner-admin-password-confirmation" type="password" placeholder="Retape le mot de passe">
+                </div>
+              </div>
+            </div>
+
+            <div id="partner-list-group" class="settings-group hidden">
+              <h3>Partenaires existants</h3>
+              <div class="card-subtitle">Coche les garages qui doivent recevoir les demandes clients centralisées. Le bouton supprimer désactivé le garage, coupe ses accès admin et le retire de la diffusion.</div>
+              <div class="toolbar" style="margin: 12px 0 14px;">
+                <div class="toolbar-group" style="min-width: 280px;">
+                  <select id="partner-health-filter" aria-label="Filtrer les partenaires">
+                    <option value="all">Tous les garages</option>
+                    <option value="not_configured">eCarsTrade non configur&eacute;</option>
+                    <option value="failed">Dernier test KO</option>
+                    <option value="ready">Pr&ecirc;ts &agrave; lancer</option>
+                    <option value="attention">&Agrave; v&eacute;rifier</option>
+                  </select>
+                </div>
+                <div id="partner-filter-summary" class="card-subtitle">Affichage de tous les garages.</div>
+              </div>
+              <div id="partner-list" class="partner-list">
+                <div class="empty-state">Aucun partenaire charge pour le moment.</div>
+              </div>
+            </div>
+
+            <div id="association-code-group" class="settings-group hidden">
+              <div class="card-header" style="padding:0; margin-bottom:12px;">
+                <div>
+                  <h3 style="margin-bottom:4px;">Codes d'association client</h3>
+                  <div class="card-subtitle">G&eacute;n&egrave;re des codes uniques &agrave; transmettre &agrave; tes clients.</div>
+                </div>
+                <button class="btn" type="button" onclick="createAssociationCode()">G&eacute;n&eacute;rer un code</button>
+              </div>
+              <div class="grid-2" style="margin-bottom:14px;">
+                <div class="field">
+                  <label for="association-code-label">Libell&eacute; (optionnel)</label>
+                  <input id="association-code-label" type="text" placeholder="Ex. Client WhatsApp Avril">
+                </div>
+                <div class="field">
+                  <label for="association-code-max-uses">Nombre d'utilisations</label>
+                  <input id="association-code-max-uses" type="number" min="1" value="1">
+                </div>
+              </div>
+              <div id="association-code-list" class="partner-list">
+                <div class="empty-state">Aucun code g&eacute;n&eacute;r&eacute; pour le moment.</div>
+              </div>
+            </div>
+
+            <div id="association-request-group" class="settings-group hidden">
+              <h3>Demandes d'association</h3>
+              <div id="association-request-list" class="partner-list">
+                <div class="empty-state">Aucune demande pour le moment.</div>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>S&eacute;curit&eacute; du compte</h3>
+              <p class="card-subtitle">Le changement de mot de passe est maintenant disponible depuis le menu compte en haut &agrave; droite, comme sur un site classique.</p>
+              <div class="action-row">
+                <button class="btn-secondary" type="button" onclick="openAdminProfilePanel()">Ouvrir mon compte</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay" onclick="dismissModal(event)">
+    <div class="modal">
+      <h3 id="modal-title">Confirmer l'action</h3>
+      <p id="modal-sub">Cette action sera appliqu&eacute;e au candidat s&eacute;lectionn&eacute;.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" type="button" onclick="closeModal()">Annuler</button>
+        <button id="modal-confirm" class="btn" type="button" onclick="confirmModal()">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API_ORIGIN = window.__API_ORIGIN || (window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : window.location.origin);
+    const API_ADMIN_BASE = `${API_ORIGIN}/api/admin`;
+    const adminQuery = new URLSearchParams(window.location.search);
+    const adminResetMode = adminQuery.get('mode') || '';
+    const adminResetToken = adminQuery.get('token') || '';
+    const adminResetEmail = adminQuery.get('email') || '';
+    const ADMIN_TOKEN_KEY = 'admin_token';
+
+    function getStoredAdminToken() {
+      return localStorage.getItem(ADMIN_TOKEN_KEY) || sessionStorage.getItem(ADMIN_TOKEN_KEY) || '';
+    }
+
+    function resolveAdminStorage(remember = null) {
+      if (remember === true) return localStorage;
+      if (remember === false) return sessionStorage;
+      if (localStorage.getItem(ADMIN_TOKEN_KEY)) return localStorage;
+      if (sessionStorage.getItem(ADMIN_TOKEN_KEY)) return sessionStorage;
+      return localStorage;
+    }
+
+    function clearAdminSession() {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+
+    const state = {
+      token: getStoredAdminToken(),
+      adminProfile: null,
+      ecarsTradeIntegration: null,
+      partners: [],
+      routingOrganizationIds: [],
+      associationCodes: [],
+      associationRequests: [],
+      currentSearchId: null,
+      currentResultId: null,
+      currentResults: [],
+      currentCandidateMatches: [],
+      candidateMatchesSearchId: null,
+      currentSearch: null,
+      modalAction: null
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatMoney(value) {
+      if (value == null || value === '') return '—';
+      return `${Number(value).toLocaleString('fr-FR')} EUR`;
+    }
+
+    function networkErrorMessage() {
+      return `Impossible de joindre l'API (${API_ORIGIN}). Lance Laravel avec "php artisan serve" puis recharge la page.`;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3200);
+    }
+
+    function showAuthError(message) {
+      const box = document.getElementById('auth-error');
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    function clearAuthError() {
+      const box = document.getElementById('auth-error');
+      box.textContent = '';
+      box.style.display = 'none';
+    }
+
+    function showAuthSuccess(message) {
+      const box = document.getElementById('auth-success');
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    function clearAuthSuccess() {
+      const box = document.getElementById('auth-success');
+      box.textContent = '';
+      box.style.display = 'none';
+    }
+
+    function setAuthDebugMessage(message, url = '') {
+      const box = document.getElementById('auth-debug');
+
+      if (!message) {
+        box.innerHTML = '';
+        box.style.display = 'none';
+        return;
+      }
+
+      box.innerHTML = url ? `${message}<br><a href="${url}">${url}</a>` : message;
+      box.style.display = 'block';
+    }
+
+    function clearAuthFeedback() {
+      clearAuthError();
+      clearAuthSuccess();
+      setAuthDebugMessage('');
+    }
+
+    function showPanelError(message) {
+      const box = document.getElementById('panel-error');
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    function clearPanelError() {
+      const box = document.getElementById('panel-error');
+      box.textContent = '';
+      box.style.display = 'none';
+    }
+
+    function showAuthShell() {
+      document.getElementById('auth-shell').classList.add('visible');
+      document.getElementById('dash').classList.remove('visible');
+    }
+
+    function showDashShell() {
+      document.getElementById('auth-shell').classList.remove('visible');
+      document.getElementById('dash').classList.add('visible');
+    }
+
+    function showAdminAuthMode(mode) {
+      const loginForm = document.getElementById('admin-login-form');
+      const loginLinks = document.getElementById('admin-login-links');
+      const forgotShell = document.getElementById('admin-forgot-shell');
+      const resetShell = document.getElementById('admin-reset-shell');
+
+      loginForm.classList.toggle('hidden', mode !== 'login');
+      loginLinks.classList.toggle('hidden', mode !== 'login');
+      forgotShell.classList.toggle('visible', mode === 'forgot');
+      resetShell.classList.toggle('visible', mode === 'reset');
+      clearAuthFeedback();
+    }
+
+    function showSection(id, btn) {
+      closeAdminProfilePanel();
+      ['overview', 'demandes', 'resultats', 'fiche', 'params'].forEach((sectionId) => {
+        document.getElementById(`s-${sectionId}`).classList.remove('visible');
+      });
+      document.getElementById(`s-${id}`).classList.add('visible');
+      document.querySelectorAll('.nav-btn').forEach((node) => node.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function openAdminProfilePanel() {
+      const panel = document.getElementById('admin-profile-panel');
+      const trigger = document.getElementById('admin-profile-trigger');
+      panel.classList.remove('hidden');
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeAdminProfilePanel() {
+      const panel = document.getElementById('admin-profile-panel');
+      const trigger = document.getElementById('admin-profile-trigger');
+      if (!panel || !trigger) return;
+      panel.classList.add('hidden');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleAdminProfilePanel() {
+      const panel = document.getElementById('admin-profile-panel');
+      if (panel.classList.contains('hidden')) {
+        openAdminProfilePanel();
+        return;
+      }
+
+      closeAdminProfilePanel();
+    }
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      };
+    }
+
+    async function adminFetch(path, options = {}) {
+      let response;
+      try {
+        response = await fetch(`${API_ADMIN_BASE}${path}`, {
+          ...options,
+          headers: {
+            ...authHeaders(),
+            ...(options.headers || {})
+          }
+        });
+      } catch (error) {
+        throw new Error(networkErrorMessage());
+      }
+
+      if (response.status === 401) {
+        clearAdminSession();
+        state.token = null;
+        showAuthShell();
+        throw new Error('Session expirée. Reconnecte-toi.');
+      }
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(result.message || `Erreur API admin (${response.status}).`);
+        error.data = result.data || null;
+        throw error;
+      }
+      return result;
+    }
+
+    function statusLabel(value) {
+      if (value === 'active') return 'Actif';
+      if (value === 'paused') return 'Pause';
+      if (value === 'closed') return 'Clôturé';
+      if (value === 'completed') return 'Terminé';
+      if (value === 'failed') return 'Échec';
+      if (value === 'running') return 'En cours';
+      if (value === 'pending') return 'En attente';
+      return 'Nouveau';
+    }
+
+    function statusBadgeClass(value) {
+      if (value === 'failed' || value === 'closed') return 'badge-reject';
+      if (value === 'paused') return 'badge-review';
+      if (value === 'completed' || value === 'active') return 'badge-candidate';
+      return 'badge-candidate';
+    }
+
+    function decisionLabel(value) {
+      if (value === 'manual_review') return 'R\u00e9vision';
+      if (value === 'approved') return 'Approuv\u00e9';
+      if (value === 'rejected') return 'Rejet\u00e9';
+      if (value === 'on_hold') return 'En attente';
+      if (value === 'shared') return 'Envoy\u00e9';
+      return 'Candidat';
+    }
+
+    function decisionBadgeClass(value) {
+      if (value === 'approved') return 'badge-priority';
+      if (value === 'manual_review') return 'badge-review';
+      if (value === 'rejected') return 'badge-reject';
+      if (value === 'on_hold') return 'badge-review';
+      if (value === 'shared') return 'badge-candidate';
+      return 'badge-candidate';
+    }
+
+    function renderDocTag(status, okText = 'Complet') {
+      if (status === 'complete') return `<span class="tag tag-ok">${okText}</span>`;
+      if (status === 'missing') return '<span class="tag tag-missing">Manquant</span>';
+      return '<span class="tag tag-unknown">Inconnu</span>';
+    }
+
+    function renderVatTag(status) {
+      if (status === 'deductible') return '<span class="tag tag-ok">Oui</span>';
+      if (status === 'not_deductible') return '<span class="tag tag-missing">Non</span>';
+      return '<span class="tag tag-unknown">Inconnue</span>';
+    }
+
+    function renderDocsStatus(listing) {
+      const docValues = [
+        listing?.coc_status,
+        listing?.history_status,
+        listing?.maintenance_book_status,
+        listing?.vat_status
+      ];
+      if (docValues.some((value) => value === 'missing' || value === 'not_deductible')) {
+        return '<span class="tag tag-missing">Manquants</span>';
+      }
+      if (docValues.some((value) => value === 'unknown' || value == null)) {
+        return '<span class="tag tag-unknown">Inconnus</span>';
+      }
+      return '<span class="tag tag-ok">Complets</span>';
+    }
+
+    function renderDetailGrid(targetId, items, emptyMessage) {
+      const node = document.getElementById(targetId);
+      if (!items.length) {
+        node.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${escapeHtml(emptyMessage)}</div>`;
+        return;
+      }
+
+      node.innerHTML = items.map((item) => `
+        <div class="detail-item">
+          <strong>${escapeHtml(item.label)}</strong>
+          <span>${escapeHtml(item.value)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderClientComment(comment) {
+      const node = document.getElementById('client-comment-box');
+      if (!comment) {
+        node.innerHTML = 'Aucun commentaire client pour le moment.';
+        return;
+      }
+
+      node.innerHTML = escapeHtml(comment).replace(/\n/g, '<br>');
+    }
+
+    function renderSearchRunHistory(runs) {
+      const node = document.getElementById('search-run-history');
+      if (!runs || !runs.length) {
+        node.innerHTML = '<div class="empty-state">Aucun historique de run disponible.</div>';
+        return;
+      }
+
+      node.innerHTML = runs.map((run) => `
+        <div class="run-row">
+          <div class="run-main">
+            <div class="run-title">Run ${escapeHtml(run.id)}</div>
+            <div class="run-meta">${escapeHtml(statusLabel(run.status))} · ${escapeHtml(run.result_count ?? 0)} resultat(s)</div>
+            ${run.error_message ? `<div class="run-meta" style="color:var(--red-600);">${escapeHtml(run.error_message)}</div>` : ''}
+          </div>
+          <span class="pill">${escapeHtml(run.created_at ? new Date(run.created_at).toLocaleString('fr-FR') : '—')}</span>
+        </div>
+      `).join('');
+    }
+
+    function listingTypeLabel(value) {
+      return value === 'fixed_price' ? 'Prix fixe' : 'Enchère';
+    }
+
+    function listingTypeBadgeClass(value) {
+      return value === 'fixed_price' ? 'badge-review' : 'badge-priority';
+    }
+
+    function listingTypePriority(value) {
+      return value === 'fixed_price' ? 1 : 0;
+    }
+
+    function formatBudgetGap(value) {
+      if (value == null || value === '') return 'Ecart budget indisponible';
+      return `${Number(value).toLocaleString('fr-FR')} EUR sous budget`;
+    }
+
+    function formatTargetPriceWindow(budgetMax) {
+      if (budgetMax == null || budgetMax === '') return '—';
+      const lowerPrice = Math.max(0, Number(budgetMax) - 3000);
+      const upperPrice = Math.max(0, Number(budgetMax) - 2000);
+      return `${formatMoney(lowerPrice)} a ${formatMoney(upperPrice)}`;
+    }
+
+    function sortCandidateMatches(rows) {
+      return [...(rows || [])].sort((left, right) => {
+        const typeComparison = listingTypePriority(left.listing_type || left.listing?.source_type)
+          - listingTypePriority(right.listing_type || right.listing?.source_type);
+        if (typeComparison !== 0) return typeComparison;
+
+        const scoreComparison = Number(right.score || 0) - Number(left.score || 0);
+        if (scoreComparison !== 0) return scoreComparison;
+
+        const gapComparison = Number(left.budget_gap || Number.MAX_SAFE_INTEGER)
+          - Number(right.budget_gap || Number.MAX_SAFE_INTEGER);
+        if (gapComparison !== 0) return gapComparison;
+
+        return Number(left.listing?.price_buy || Number.MAX_SAFE_INTEGER)
+          - Number(right.listing?.price_buy || Number.MAX_SAFE_INTEGER);
+      });
+    }
+
+    function renderCandidateListings(matches) {
+      const node = document.getElementById('candidate-listings');
+      if (!matches || !matches.length) {
+        node.innerHTML = '<div class="empty-state">Aucune annonce compatible disponible pour cette demande.</div>';
+        return;
+      }
+
+      node.innerHTML = matches.map((match) => {
+        const listing = match.listing || {};
+        const activeClass = Number(match.id) === Number(state.currentResultId) ? ' active' : '';
+        const metaParts = [
+          listing.make && listing.model ? `${listing.make} ${listing.model}` : listing.vehicle_label,
+          listing.year || null,
+          listing.mileage != null ? `${Number(listing.mileage).toLocaleString('fr-FR')} km` : null,
+          listing.fuel || null,
+          listing.transmission || null
+        ].filter(Boolean);
+
+        return `
+          <button class="candidate-listing-item${activeClass}" type="button" onclick="openMatch(${Number(match.id)})">
+            <div class="candidate-listing-top">
+              <div class="candidate-listing-main">
+                <div class="candidate-listing-title">${escapeHtml(listing.vehicle_label || 'Annonce eCarsTrade')}</div>
+                <div class="candidate-listing-meta">${escapeHtml(metaParts.join(' · ') || 'Informations annonce indisponibles')}</div>
+              </div>
+              <div class="candidate-listing-tags">
+                <span class="badge ${listingTypeBadgeClass(match.listing_type || listing.source_type)}">${escapeHtml(match.listing_type_label || listing.source_type_label || listingTypeLabel(match.listing_type || listing.source_type))}</span>
+                <span class="pill">${escapeHtml(formatMoney(listing.price_buy))}</span>
+              </div>
+            </div>
+            <div class="candidate-listing-bottom">
+              <span class="candidate-listing-gap">${escapeHtml(match.budget_gap_label || formatBudgetGap(match.budget_gap))}</span>
+              <span class="candidate-listing-score">Score ${escapeHtml(Number(match.score || 0))}/100</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    async function loadCandidateMatchesForSearch(searchId, matches = null) {
+      const normalizedSearchId = Number(searchId || 0) || null;
+
+      if (!normalizedSearchId) {
+        state.currentCandidateMatches = [];
+        state.candidateMatchesSearchId = null;
+        renderCandidateListings([]);
+        return [];
+      }
+
+      let rows = matches;
+      if (!Array.isArray(rows)) {
+        const matchesResponse = await adminFetch(`/requests/${normalizedSearchId}/matches`);
+        rows = matchesResponse.data || [];
+      }
+
+      const sortedMatches = sortCandidateMatches(rows);
+      state.currentCandidateMatches = sortedMatches;
+      state.candidateMatchesSearchId = normalizedSearchId;
+      renderCandidateListings(sortedMatches);
+
+      return sortedMatches;
+    }
+
+    function renderRequestContext(searchRequest, match = {}) {
+      const requestData = searchRequest || {};
+      const client = requestData.client || match.client || {};
+      const criteria = requestData.criteria || match.search_criteria || {};
+      const displayName = client.full_name || [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Client';
+
+      renderDetailGrid('request-summary-list', [
+        { label: 'Client', value: displayName },
+        { label: 'Email', value: client.email || '—' },
+            { label: 'T\u00e9l\u00e9phone', value: client.phone || '—' },
+        { label: 'Recherche', value: requestData.criteria_summary || `${criteria.make || '—'} ${criteria.model || ''}`.trim() || '—' },
+        { label: 'Budget max', value: criteria.budget_max != null ? formatMoney(criteria.budget_max) : '—' },
+        { label: 'Zone prix ideale', value: criteria.budget_max != null ? formatTargetPriceWindow(criteria.budget_max) : '—' },
+        { label: 'Annee min', value: criteria.year_min || '—' },
+        { label: 'Carburant', value: criteria.fuel || '—' },
+        { label: 'Boite', value: criteria.transmission || '—' },
+        { label: 'Km max', value: criteria.mileage_max != null ? `${Number(criteria.mileage_max).toLocaleString('fr-FR')} km` : '—' },
+        { label: 'Couleur', value: criteria.color || '—' },
+        { label: 'Creee le', value: requestData.created_at ? new Date(requestData.created_at).toLocaleString('fr-FR') : '—' },
+        { label: 'Dernier scan', value: requestData.last_run_at ? new Date(requestData.last_run_at).toLocaleString('fr-FR') : '—' }
+          ], 'Ouvre une demande ou un r\u00e9sultat pour afficher la fiche client compl\u00e8te.');
+
+      renderClientComment(client.comment || '');
+      renderSearchRunHistory(match.search_runs || requestData.runs || []);
+    }
+
+    function renderSourceContext(match = {}) {
+      const listing = match.listing || {};
+      const sourceUrl = match.url || listing.source_url || '';
+      const sourceTitle = match.details || listing.vehicle_label || 'Aucune annonce source li\u00e9e';
+      const hasSourceData = Boolean(
+        sourceUrl
+        || listing.source_ref
+        || listing.vehicle_label
+        || match.details
+        || listing.price_buy != null
+      );
+
+      if (!hasSourceData) {
+        renderDetailGrid('source-summary-list', [], 'Aucune annonce source li\u00e9e pour le moment.');
+        document.getElementById('source-link-box').innerHTML = 'Le lien source appara\u00eetra ici d\u00e8s qu\u2019une annonce sera ouverte.';
+        return;
+      }
+
+      renderDetailGrid('source-summary-list', [
+        { label: 'Annonce', value: sourceTitle },
+          { label: 'R\u00e9f\u00e9rence', value: listing.source_ref || '—' },
+        { label: 'Type annonce', value: match.listing_type_label || listing.source_type_label || listingTypeLabel(match.listing_type || listing.source_type) },
+        { label: 'Ecart budget', value: match.budget_gap_label || formatBudgetGap(match.budget_gap ?? listing.budget_gap) },
+        { label: 'Marque / modele', value: `${listing.make || '—'} ${listing.model || ''}`.trim() || '—' },
+        { label: 'Annee', value: listing.year || '—' },
+        { label: 'Kilometrage', value: listing.mileage != null ? `${Number(listing.mileage).toLocaleString('fr-FR')} km` : '—' },
+        { label: 'Carburant', value: listing.fuel || '—' },
+        { label: 'Boite', value: listing.transmission || '—' },
+        { label: 'Couleur', value: listing.color || '—' },
+        { label: 'Pays origine', value: listing.country_origin || '—' }
+        ], 'Aucune annonce source li\u00e9e pour le moment.');
+
+      const linkBox = document.getElementById('source-link-box');
+      if (!sourceUrl) {
+        linkBox.innerHTML = 'Le lien source appara\u00eetra ici d\u00e8s qu\u2019une annonce sera ouverte.';
+        return;
+      }
+
+      linkBox.innerHTML = `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`;
+    }
+
+    function renderDecisionHistory(match = {}) {
+      const historyLines = [
+        `
+          <div class="run-row">
+            <div class="run-main">
+              <div class="run-title">${escapeHtml(decisionLabel(match.decision || 'candidate'))}</div>
+              <div class="run-meta">${escapeHtml(match.admin_summary || 'Aucun résumé admin.')}</div>
+            </div>
+            <span class="pill">${escapeHtml(match.reviewed_at ? new Date(match.reviewed_at).toLocaleString('fr-FR') : '—')}</span>
+          </div>
+        `
+      ];
+
+      if (match.client_shared_at) {
+        historyLines.push(`
+          <div class="run-row">
+            <div class="run-main">
+          <div class="run-title">Envoy\u00e9 au client</div>
+              <div class="run-meta">${escapeHtml(match.shared_channel || 'manuel')} · ${escapeHtml(match.shared_note || 'Envoi tracé depuis le dashboard.')}</div>
+            </div>
+            <span class="pill">${escapeHtml(new Date(match.client_shared_at).toLocaleString('fr-FR'))}</span>
+          </div>
+        `);
+      }
+
+      document.getElementById('decision-history').innerHTML = historyLines.join('');
+    }
+
+    function resetCandidatePricing() {
+      document.getElementById('doc-coc').innerHTML = renderDocTag('unknown', 'Oui');
+      document.getElementById('doc-maintenance').innerHTML = renderDocTag('unknown', 'Confirme');
+      document.getElementById('doc-history').innerHTML = renderDocTag('unknown', 'Confirme');
+      document.getElementById('doc-vat').innerHTML = renderVatTag('unknown');
+      document.getElementById('price-buy').textContent = formatMoney(0);
+      document.getElementById('price-platform').textContent = formatMoney(0);
+      document.getElementById('price-transport').textContent = formatMoney(0);
+      document.getElementById('price-prep').textContent = formatMoney(0);
+      document.getElementById('price-admin').textContent = formatMoney(0);
+      document.getElementById('price-reserve').textContent = formatMoney(0);
+      document.getElementById('price-buffer').textContent = formatMoney(0);
+      document.getElementById('price-total').textContent = formatMoney(0);
+      document.getElementById('price-resale').textContent = formatMoney(0);
+      document.getElementById('price-margin').textContent = formatMoney(0);
+      document.getElementById('match-score').textContent = '0 / 100';
+      document.getElementById('admin-summary-input').value = '';
+      document.getElementById('review-notes-input').value = '';
+      document.getElementById('decision-history').innerHTML = '<div class="empty-state">Aucun historique disponible.</div>';
+      renderSourceContext({});
+    }
+
+    async function loginAdmin(email, password, adminCode, remember = false) {
+      let response;
+      try {
+        response = await fetch(`${API_ADMIN_BASE}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ email, password, admin_code: adminCode || null })
+        });
+      } catch (error) {
+        throw new Error(networkErrorMessage());
+      }
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.message || 'Identifiants invalides.');
+      }
+      state.token = result.data.token;
+      clearAdminSession();
+      resolveAdminStorage(remember).setItem(ADMIN_TOKEN_KEY, state.token);
+    }
+
+    async function adminGuestFetch(path, payload) {
+      let response;
+
+      try {
+        response = await fetch(`${API_ADMIN_BASE}${path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        throw new Error(networkErrorMessage());
+      }
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.message || `Erreur API admin (${response.status}).`);
+      }
+
+      return result;
+    }
+
+    async function logoutAdmin() {
+      if (state.token) {
+        try {
+          await adminFetch('/logout', { method: 'POST' });
+        } catch (error) {
+          // noop
+        }
+      }
+      clearAdminSession();
+      state.token = null;
+      state.currentSearchId = null;
+      state.currentResultId = null;
+      state.currentResults = [];
+      state.currentSearch = null;
+      showAuthShell();
+      clearPanelError();
+      showToast('Déconnexion effectuée.');
+    }
+
+    async function loadAdminProfile() {
+      const result = await adminFetch('/me');
+      const admin = result.data || {};
+      state.adminProfile = admin;
+      const displayName = admin.name || [admin.first_name, admin.last_name].filter(Boolean).join(' ') || 'Admin';
+      const roleLabel = admin.role === 'super_admin' ? 'Super-admin' : 'Admin partenaire';
+      const organizationLabel = admin.organization?.name || 'Vue globale MBPRESTIGE';
+
+      document.getElementById('admin-display-name').textContent = displayName;
+      document.getElementById('admin-email').textContent = admin.email || 'admin@example.com';
+      document.getElementById('admin-avatar').textContent = (admin.email || 'A').charAt(0).toUpperCase();
+      document.getElementById('account-admin-first-name').value = admin.first_name || '';
+      document.getElementById('account-admin-last-name').value = admin.last_name || '';
+      document.getElementById('account-admin-email').value = admin.email || '';
+      document.getElementById('account-admin-phone').value = admin.phone || '';
+      document.getElementById('account-admin-role').value = roleLabel;
+      document.getElementById('account-admin-organization').value = organizationLabel;
+      renderPartnerAccess(admin);
+    }
+
+    function setEcarsTradeFeedback(type, message) {
+      const infoBox = document.getElementById('ecarstrade-info');
+      const errorBox = document.getElementById('ecarstrade-error');
+      const successBox = document.getElementById('ecarstrade-success');
+
+      [infoBox, errorBox, successBox].forEach((box) => {
+        box.style.display = 'none';
+        box.textContent = '';
+      });
+
+      if (!message) {
+        return;
+      }
+
+      const target = type === 'success'
+        ? successBox
+        : (type === 'error' ? errorBox : infoBox);
+
+      target.textContent = message;
+      target.style.display = 'block';
+    }
+
+    function renderEcarsTradeAccount(integration = {}) {
+      state.ecarsTradeIntegration = integration;
+
+      const configurable = Boolean(integration.configurable);
+      const hasPassword = Boolean(integration.has_password);
+      const fields = [
+        'ecarstrade-login-email',
+        'ecarstrade-login-username',
+        'ecarstrade-password',
+        'ecarstrade-base-url'
+      ];
+
+      document.getElementById('ecarstrade-login-email').value = integration.login_email || '';
+      document.getElementById('ecarstrade-login-username').value = integration.login_username || '';
+      document.getElementById('ecarstrade-password').value = '';
+      document.getElementById('ecarstrade-password').placeholder = hasPassword
+        ? 'Laisse vide pour conserver le mot de passe actuel'
+        : 'Mot de passe eCarsTrade requis';
+      document.getElementById('ecarstrade-base-url').value = integration.base_url || 'https://fr.ecarstrade.com';
+      document.getElementById('ecarstrade-status').value = integration.last_auth_status_label || 'Jamais test\u00e9';
+      document.getElementById('ecarstrade-last-check').value = integration.last_auth_checked_at
+        ? new Date(integration.last_auth_checked_at).toLocaleString('fr-FR')
+        : 'Jamais';
+
+      fields.forEach((id) => {
+        document.getElementById(id).disabled = !configurable;
+      });
+      document.getElementById('ecarstrade-save-btn').disabled = !configurable;
+      document.getElementById('ecarstrade-test-btn').disabled = !configurable || !integration.configured;
+
+      if (!configurable) {
+        setEcarsTradeFeedback('info', integration.message || 'Disponible uniquement pour un admin rattache a un garage.');
+        return;
+      }
+
+      if (integration.last_auth_status === 'failed' && integration.last_auth_error) {
+        setEcarsTradeFeedback('error', integration.last_auth_error);
+        return;
+      }
+
+      setEcarsTradeFeedback('info', integration.message || 'Configure ici le compte eCarsTrade de ton garage.');
+    }
+
+    async function loadEcarsTradeAccount() {
+      try {
+        const result = await adminFetch('/integrations/ecarstrade');
+        renderEcarsTradeAccount(result.data || {});
+      } catch (error) {
+        setEcarsTradeFeedback('error', error.message);
+      }
+    }
+
+    function setupAdminResetPrefill() {
+      document.getElementById('admin-forgot-email').value = adminResetEmail || '';
+      document.getElementById('admin-reset-email').value = adminResetEmail || '';
+      document.getElementById('admin-reset-token').value = adminResetToken || '';
+
+      if (adminResetMode === 'reset' && adminResetToken && adminResetEmail) {
+        showAdminAuthMode('reset');
+      } else {
+        showAdminAuthMode('login');
+      }
+    }
+
+    async function requestAdminPasswordReset(event) {
+      event.preventDefault();
+      clearAuthFeedback();
+
+      const button = document.getElementById('admin-forgot-btn');
+      const email = document.getElementById('admin-forgot-email').value.trim().toLowerCase();
+
+      if (!email) {
+        showAuthError('Merci de renseignér votre email administrateur.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Pr\u00e9paration...';
+
+      try {
+        const result = await adminGuestFetch('/forgot-password', { email });
+        showAuthSuccess(result.message || 'Si un compte existe, un lien de r\u00e9initialisation a \u00e9t\u00e9 pr\u00e9par\u00e9.');
+
+        if (result?.data?.debug_reset_url) {
+          setAuthDebugMessage('Lien de test g\u00e9n\u00e9r\u00e9 en environnement local :', result.data.debug_reset_url);
+        }
+      } catch (error) {
+        showAuthError(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Envoyer le lien de r\u00e9initialisation';
+      }
+    }
+
+    async function submitAdminResetPassword(event) {
+      event.preventDefault();
+      clearAuthFeedback();
+
+      const button = document.getElementById('admin-reset-btn');
+      const email = document.getElementById('admin-reset-email').value.trim().toLowerCase();
+      const token = document.getElementById('admin-reset-token').value.trim();
+      const password = document.getElementById('admin-reset-password').value;
+      const passwordConfirmation = document.getElementById('admin-reset-password-confirmation').value;
+
+      if (!email || !token) {
+        showAuthError('Le lien de réinitialisation est invalide ou incomplet.');
+        return;
+      }
+
+      if (password.length < 8) {
+        showAuthError('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+        return;
+      }
+
+      if (password !== passwordConfirmation) {
+        showAuthError('La confirmation du mot de passe ne correspond pas.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Mise \u00e0 jour...';
+
+      try {
+        const result = await adminGuestFetch('/reset-password', {
+          email,
+          token,
+          password,
+          password_confirmation: passwordConfirmation
+        });
+
+        showAuthSuccess(result.message || 'Mot de passe r\u00e9initialis\u00e9. Vous pouvez maintenant vous connecter.');
+        document.getElementById('login-email').value = email;
+        document.getElementById('admin-reset-password').value = '';
+        document.getElementById('admin-reset-password-confirmation').value = '';
+        setTimeout(() => showAdminAuthMode('login'), 800);
+      } catch (error) {
+        showAuthError(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Mettre \u00e0 jour mon mot de passe';
+      }
+    }
+
+    function setAdminPasswordFeedback(type, message) {
+      const errorBox = document.getElementById('admin-password-error');
+      const successBox = document.getElementById('admin-password-success');
+
+      errorBox.style.display = 'none';
+      errorBox.textContent = '';
+      successBox.style.display = 'none';
+      successBox.textContent = '';
+
+      if (!message) {
+        return;
+      }
+
+      const box = type === 'success' ? successBox : errorBox;
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    function setAdminProfileFeedback(type, message) {
+      const errorBox = document.getElementById('admin-profile-error');
+      const successBox = document.getElementById('admin-profile-success');
+
+      errorBox.style.display = 'none';
+      errorBox.textContent = '';
+      successBox.style.display = 'none';
+      successBox.textContent = '';
+
+      if (!message) {
+        return;
+      }
+
+      const box = type === 'success' ? successBox : errorBox;
+      box.textContent = message;
+      box.style.display = 'block';
+    }
+
+    async function saveAdminProfile(event) {
+      event.preventDefault();
+      setAdminProfileFeedback('', '');
+
+      const button = document.getElementById('admin-profile-btn');
+      const payload = {
+        first_name: document.getElementById('account-admin-first-name').value.trim(),
+        last_name: document.getElementById('account-admin-last-name').value.trim(),
+        email: document.getElementById('account-admin-email').value.trim().toLowerCase(),
+        phone: document.getElementById('account-admin-phone').value.trim()
+      };
+
+      if (!payload.first_name || !payload.last_name || !payload.email) {
+        setAdminProfileFeedback('error', 'Merci de renseignér le pr\u00e9nom, le nom et l\'email.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Mise \u00e0 jour...';
+
+      try {
+        const result = await adminFetch('/account/profile', {
+          method: 'PATCH',
+          body: JSON.stringify(payload)
+        });
+
+        state.adminProfile = result.data || state.adminProfile;
+        await loadAdminProfile();
+        setAdminProfileFeedback('success', result.message || 'Votre profil administrateur a bien \u00e9t\u00e9 mis \u00e0 jour.');
+      } catch (error) {
+        setAdminProfileFeedback('error', error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Mettre a jour mon profil';
+      }
+    }
+
+    async function saveEcarsTradeAccount(event) {
+      event.preventDefault();
+      setEcarsTradeFeedback('', '');
+
+      const button = document.getElementById('ecarstrade-save-btn');
+      const payload = {
+        login_email: document.getElementById('ecarstrade-login-email').value.trim().toLowerCase(),
+        login_username: document.getElementById('ecarstrade-login-username').value.trim(),
+        password: document.getElementById('ecarstrade-password').value,
+        base_url: document.getElementById('ecarstrade-base-url').value.trim()
+      };
+
+      if (!payload.login_email && !payload.login_username) {
+        setEcarsTradeFeedback('error', 'Merci de renseignér au moins un email ou un identifiant eCarsTrade.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Enregistrement...';
+
+      try {
+        const result = await adminFetch('/integrations/ecarstrade', {
+          method: 'PATCH',
+          body: JSON.stringify(payload)
+        });
+
+        renderEcarsTradeAccount(result.data || {});
+        setEcarsTradeFeedback('success', result.message || 'Les identifiants eCarsTrade ont bien \u00e9t\u00e9 enregistr\u00e9s.');
+      } catch (error) {
+        setEcarsTradeFeedback('error', error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Enregistrer les identifiants';
+      }
+    }
+
+    async function testEcarsTradeAccount() {
+      setEcarsTradeFeedback('', '');
+
+      const button = document.getElementById('ecarstrade-test-btn');
+      button.disabled = true;
+      button.textContent = 'Test en cours...';
+
+      try {
+        const result = await adminFetch('/integrations/ecarstrade/test', {
+          method: 'POST'
+        });
+
+        renderEcarsTradeAccount(result.data || {});
+        setEcarsTradeFeedback('success', result.message || 'Connexion eCarsTrade confirm\u00e9e.');
+      } catch (error) {
+        if (error?.data) {
+          renderEcarsTradeAccount(error.data);
+        }
+        setEcarsTradeFeedback('error', error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Tester la connexion';
+      }
+    }
+
+    async function saveAdminPassword(event) {
+      event.preventDefault();
+      setAdminPasswordFeedback('', '');
+
+      const button = document.getElementById('admin-password-btn');
+      const currentPassword = document.getElementById('admin-current-password').value;
+      const nextPassword = document.getElementById('admin-new-password').value;
+      const confirmation = document.getElementById('admin-new-password-confirmation').value;
+
+      if (!currentPassword || !nextPassword || !confirmation) {
+        setAdminPasswordFeedback('error', 'Merci de renseignér tous les champs du mot de passe.');
+        return;
+      }
+
+      if (nextPassword.length < 8) {
+        setAdminPasswordFeedback('error', 'Le nouveau mot de passe doit contenir au moins 8 caractères.');
+        return;
+      }
+
+      if (nextPassword !== confirmation) {
+        setAdminPasswordFeedback('error', 'La confirmation du nouveau mot de passe ne correspond pas.');
+        return;
+      }
+
+      if (currentPassword === nextPassword) {
+        setAdminPasswordFeedback('error', 'Le nouveau mot de passe doit etre different de l ancien.');
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Mise \u00e0 jour...';
+
+      try {
+        const result = await adminFetch('/account/password', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            current_password: currentPassword,
+            password: nextPassword,
+            password_confirmation: confirmation
+          })
+        });
+
+        document.getElementById('admin-password-form').reset();
+        setAdminPasswordFeedback('success', result.message || 'Votre mot de passe a bien \u00e9t\u00e9 mis \u00e0 jour.');
+      } catch (error) {
+        setAdminPasswordFeedback('error', error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Mettre \u00e0 jour mon mot de passe';
+      }
+    }
+
+    function renderPartnerAccess(admin) {
+      const summaryNode = document.getElementById('partner-accèss-summary');
+      const roleLabel = admin.role === 'super_admin' ? 'Super-admin' : 'Admin partenaire';
+      const organizationName = admin.organization?.name || 'Vue globale MBPRESTIGE';
+      const partnerCode = admin.organization?.partner_code || 'Non applicable';
+      const adminCode = admin.organization?.admin_code || 'Non applicable';
+      const publicLink = admin.organization?.public_form_path || 'Non applicable';
+
+      summaryNode.innerHTML = `
+        <div class="detail-item">
+          <strong>Role</strong>
+          <span>${escapeHtml(roleLabel)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Organisation</strong>
+          <span>${escapeHtml(organizationName)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Code administrateur</strong>
+          <span>${escapeHtml(adminCode)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Code permanent client</strong>
+          <span>${escapeHtml(partnerCode)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Lien public</strong>
+          <span>${escapeHtml(publicLink)}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Portee</strong>
+          <span>${escapeHtml(admin.role === 'super_admin' ? 'Toutes les organisations' : 'Seulement vos clients et vos demandes')}</span>
+        </div>
+      `;
+
+      document.getElementById('partner-create-group').classList.toggle('hidden', admin.role !== 'super_admin');
+      document.getElementById('partner-list-group').classList.toggle('hidden', admin.role !== 'super_admin');
+      document.getElementById('association-code-group').classList.toggle('hidden', admin.role === 'super_admin');
+      document.getElementById('association-request-group').classList.toggle('hidden', false);
+    }
+
+    function renderPartnerList(rows) {
+      const node = document.getElementById('partner-list');
+
+      if (!rows || !rows.length) {
+        node.innerHTML = '<div class="empty-state">Aucun partenaire cr\u00e9\u00e9 pour le moment.</div>';
+        return;
+      }
+
+      node.innerHTML = rows.map((partner) => `
+        <div class="partner-row">
+          <div class="partner-row-top">
+            <div>
+              <div class="partner-name">${escapeHtml(partner.name || 'Partenaire')}</div>
+          <div class="partner-meta">${escapeHtml(partner.location || 'Localisation non renseign\u00e9e')}</div>
+            </div>
+            <span class="partner-code">${escapeHtml(partner.partner_code || 'CODE')}</span>
+          </div>
+          <div class="partner-row-bottom">
+            <div class="partner-meta">${escapeHtml(partner.primary_admin?.email || 'Email admin indisponible')}</div>
+            <div class="partner-meta">${Number(partner.stats?.clients_count || 0)} client(s) · ${Number(partner.stats?.searches_count || 0)} demande(s)</div>
+          </div>
+          <div class="partner-meta">Admin : ${escapeHtml(partner.admin_code || 'ADM')}</div>
+                <div class="partner-meta">Lien public : ${escapeHtml(partner.public_form_path || 'html//demande')}</div>
+          <div class="partner-meta">${escapeHtml(partner.description || 'Aucune description renseign\u00e9e.')}</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadPartners() {
+      if (state.adminProfile?.role !== 'super_admin') {
+        state.partners = [];
+        renderPartnerList([]);
+        return;
+      }
+
+      try {
+        const result = await adminFetch('/partners');
+        state.partners = result.data || [];
+        renderPartnerList(state.partners);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function createPartnerAdmin() {
+      try {
+        clearPanelError();
+
+        const payload = {
+          organization_name: document.getElementById('partner-organization-name').value.trim(),
+          organization_slug: document.getElementById('partner-organization-slug').value.trim() || null,
+          organization_location: document.getElementById('partner-organization-location').value.trim() || null,
+          organization_description: document.getElementById('partner-organization-description').value.trim() || null,
+          admin_first_name: document.getElementById('partner-admin-first-name').value.trim(),
+          admin_last_name: document.getElementById('partner-admin-last-name').value.trim(),
+          admin_email: document.getElementById('partner-admin-email').value.trim().toLowerCase(),
+          admin_phone: document.getElementById('partner-admin-phone').value.trim() || null,
+          password: document.getElementById('partner-admin-password').value,
+          password_confirmation: document.getElementById('partner-admin-password-confirmation').value
+        };
+
+        if (
+          !payload.organization_name
+          || !payload.admin_first_name
+          || !payload.admin_last_name
+          || !payload.admin_email
+          || !payload.password
+          || !payload.password_confirmation
+        ) {
+          throw new Error('Merci de remplir tous les champs obligatoires du partenaire.');
+        }
+
+        await adminFetch('/partners', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById('partner-organization-name').value = '';
+        document.getElementById('partner-organization-slug').value = '';
+        document.getElementById('partner-organization-location').value = '';
+        document.getElementById('partner-organization-description').value = '';
+        document.getElementById('partner-admin-first-name').value = '';
+        document.getElementById('partner-admin-last-name').value = '';
+        document.getElementById('partner-admin-email').value = '';
+        document.getElementById('partner-admin-phone').value = '';
+        document.getElementById('partner-admin-password').value = '';
+        document.getElementById('partner-admin-password-confirmation').value = '';
+
+      showToast('Admin partenaire cr\u00e9\u00e9 avec succ\u00e8s.');
+        await loadPartners();
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    function renderAssociationCodes(rows) {
+      const node = document.getElementById('association-code-list');
+
+      if (!rows || !rows.length) {
+        node.innerHTML = '<div class="empty-state">Aucun code g\u00e9n\u00e9r\u00e9 pour le moment.</div>';
+        return;
+      }
+
+      node.innerHTML = rows.map((row) => `
+        <div class="partner-row">
+          <div class="partner-row-top">
+            <div>
+              <div class="partner-name">${escapeHtml(row.code || 'CLI000000')}</div>
+              <div class="partner-meta">${escapeHtml(row.label || 'Code sans libell\u00e9')}</div>
+            </div>
+            <span class="partner-code">${escapeHtml(row.is_active ? 'Actif' : 'Inactif')}</span>
+          </div>
+          <div class="partner-row-bottom">
+            <div class="partner-meta">Utilisations : ${Number(row.use_count || 0)} / ${row.max_uses == null ? 'illimite' : Number(row.max_uses)}</div>
+            <div class="partner-meta">${escapeHtml(row.last_used_at ? new Date(row.last_used_at).toLocaleString('fr-FR') : 'Jamais utilise')}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAssociationRequests(rows) {
+      const node = document.getElementById('association-request-list');
+
+      if (!rows || !rows.length) {
+        node.innerHTML = '<div class="empty-state">Aucune demande pour le moment.</div>';
+        return;
+      }
+
+      node.innerHTML = rows.map((row) => `
+        <div class="partner-row">
+          <div class="partner-row-top">
+            <div>
+              <div class="partner-name">${escapeHtml(row.client?.name || 'Client')}</div>
+              <div class="partner-meta">${escapeHtml(row.organization?.name || 'Garage')}</div>
+            </div>
+            <span class="partner-code">${escapeHtml(row.status || 'pending')}</span>
+          </div>
+          <div class="partner-row-bottom">
+            <div class="partner-meta">${escapeHtml(row.client?.email || 'Email indisponible')}</div>
+              <div class="partner-meta">${escapeHtml(row.client?.phone || 'T\u00e9l\u00e9phone indisponible')}</div>
+          </div>
+          ${row.client_message ? `<div class="partner-meta">Message client : ${escapeHtml(row.client_message)}</div>` : ''}
+          ${row.admin_response ? `<div class="partner-meta">Reponse admin : ${escapeHtml(row.admin_response)}</div>` : ''}
+          ${row.status === 'pending' ? `<div class="garage-actions"><button class="btn" type="button" onclick="reviewAssociationRequest(${Number(row.id)}, 'accepted')">Accepter</button><button class="btn2" type="button" onclick="reviewAssociationRequest(${Number(row.id)}, 'rejected')">Refuser</button></div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function loadAssociationCodes() {
+      if (state.adminProfile?.role !== 'admin') {
+        state.associationCodes = [];
+        renderAssociationCodes([]);
+        return;
+      }
+
+      try {
+        const result = await adminFetch('/association-codes');
+        state.associationCodes = result.data || [];
+        renderAssociationCodes(state.associationCodes);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function createAssociationCode() {
+      try {
+        clearPanelError();
+
+        const payload = {
+          label: document.getElementById('association-code-label').value.trim() || null,
+          max_uses: Number(document.getElementById('association-code-max-uses').value || 1)
+        };
+
+        await adminFetch('/association-codes', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById('association-code-label').value = '';
+        document.getElementById('association-code-max-uses').value = '1';
+        showToast('Code client g\u00e9n\u00e9r\u00e9 avec succ\u00e8s.');
+        await loadAssociationCodes();
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function loadAssociationRequests() {
+      try {
+        const result = await adminFetch('/association-requests');
+        state.associationRequests = result.data || [];
+        renderAssociationRequests(state.associationRequests);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function reviewAssociationRequest(id, decision) {
+      try {
+        await adminFetch(`/association-requests/${Number(id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ decision })
+        });
+
+        showToast(decision === 'accepted' ? 'Demande acceptee.' : 'Demande refusee.');
+        await loadAssociationRequests();
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function loadDashboard() {
+      const result = await adminFetch('/dashboard');
+      const data = result.data || {};
+      const kpis = data.kpis || {};
+
+      document.getElementById('kpi-active-searches').textContent = kpis.active_searches ?? 0;
+      document.getElementById('kpi-today-candidates').textContent = kpis.today_candidates ?? 0;
+      document.getElementById('kpi-high-priority').textContent = kpis.high_priority ?? 0;
+      document.getElementById('kpi-alerts-sent').textContent = kpis.alerts_sent ?? 0;
+      document.getElementById('kpi-auto-rejected').textContent = kpis.auto_rejected ?? 0;
+
+      const priorities = data.high_priority_matches || [];
+      const priorityList = document.getElementById('priority-list');
+      if (!priorities.length) {
+        priorityList.innerHTML = '<div class="empty-state">Aucune priorité pour le moment.</div>';
+      } else {
+        priorityList.innerHTML = priorities.map((match) => `
+          <div class="priority-item" onclick="openMatch(${Number(match.id)})">
+            <div class="priority-main">
+              <div class="priority-title">${escapeHtml(match.vehicle_label || 'Vehicule')}</div>
+              <div class="priority-meta">${Number(match.mileage || 0).toLocaleString('fr-FR')} km · ${escapeHtml(match.fuel || 'n/a')} · ${escapeHtml(match.transmission || 'n/a')} · ${escapeHtml(match.country_origin || '')}</div>
+            </div>
+            <div class="action-group">
+              <span class="badge badge-priority">Priorite</span>
+              <span class="pill">${escapeHtml(match.score ?? 0)}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const notifications = data.récent_notifications || [];
+      const alertsList = document.getElementById('alerts-list');
+      if (!notifications.length) {
+        alertsList.innerHTML = '<div class="empty-state">Aucune alerte récente.</div>';
+      } else {
+        alertsList.innerHTML = notifications.map((item) => `
+          <div class="alert-row">
+            <div class="alert-main">
+              <div class="alert-title">${escapeHtml(item.label || item.type || 'Notification')}</div>
+              <div class="alert-meta">${escapeHtml(item.channel || 'canal')} · ${escapeHtml(item.status || 'sent')}</div>
+            </div>
+            <span class="pill">${escapeHtml(item.sent_at ? new Date(item.sent_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--')}</span>
+          </div>
+        `).join('');
+      }
+
+      const runs = data.récent_runs || [];
+      const history = document.getElementById('scan-history');
+      if (!runs.length) {
+        history.innerHTML = '<div class="empty-state">Aucun run récent.</div>';
+      } else {
+        history.innerHTML = runs.map((run) => `
+          <div class="run-row">
+            <div class="run-main">
+              <div class="run-title">Run ${escapeHtml(run.id)}</div>
+              <div class="run-meta">${escapeHtml(run.status || 'pending')} · ${escapeHtml(run.searches_processed ?? 0)} recherches · ${escapeHtml(run.listings_processed ?? run.result_count ?? 0)} annonces · ${escapeHtml(run.priority_count ?? 0)} priorités</div>
+            </div>
+            <span class="pill">${escapeHtml(run.ran_at ? new Date(run.ran_at).toLocaleString('fr-FR') : '')}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function loadRequests() {
+      const status = document.getElementById('requests-filter-status').value;
+      const query = new URLSearchParams({ per_page: '50' });
+      if (status) query.set('status', status);
+      const result = await adminFetch(`/requests?${query.toString()}`);
+      let rows = result.data || [];
+      const body = document.getElementById('requests-body');
+
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="7">Aucune recherche client trouvée.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = rows.map((row) => {
+        const searchStatus = row.status || 'new';
+        const badgeClass = statusBadgeClass(searchStatus);
+        const client = row.client || {};
+        return `
+          <tr>
+            <td>
+              <div><strong>${escapeHtml(client.full_name || row.client_name || 'Client')}</strong></div>
+              <div class="subtext">${escapeHtml(client.email || row.client_email || '')}</div>
+              <div class="subtext">${escapeHtml(client.phone || row.client_phone || '')}</div>
+            </td>
+            <td>${escapeHtml(row.criteria_summary || '')}</td>
+            <td>—</td>
+            <td>${escapeHtml(row.last_run_at ? new Date(row.last_run_at).toLocaleString('fr-FR') : '—')}</td>
+            <td><span class="badge ${badgeClass}">${escapeHtml(statusLabel(searchStatus))}</span></td>
+            <td>
+              <span class="tag tag-ok">Email</span>
+              ${row.client_phone ? '<span class="tag tag-ok">Téléphone</span>' : '<span class="tag tag-unknown">Téléphone</span>'}
+            </td>
+            <td>
+              <div class="action-group">
+                <button class="btn-sm" type="button" onclick="viewResults(${Number(row.id)})">Résultats</button>
+                <button class="btn-sm primary" type="button" onclick="runSearch(${Number(row.id)})">Relancer</button>
+                ${searchStatus === 'active' || searchStatus === 'new' ? `<button class="btn-sm" type="button" onclick="pauseRequest(${Number(row.id)})">Pause</button>` : ''}
+                ${searchStatus === 'paused' ? `<button class="btn-sm" type="button" onclick="résuméRequest(${Number(row.id)})">Reprendre</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function viewResults(searchId) {
+      state.currentSearchId = searchId;
+      await loadMatches();
+      showSection('resultats', document.querySelector('.nav-btn[data-section="resultats"]'));
+    }
+
+    async function loadMatches() {
+      const body = document.getElementById('results-body');
+
+      if (!state.currentSearchId) {
+        body.innerHTML = '<tr><td colspan="9">Choisis d’abord une demande client puis clique sur "Résultats".</td></tr>';
+        return;
+      }
+
+      const result = await adminFetch(`/searches/${state.currentSearchId}/results`);
+      const rows = result.data || [];
+      state.currentResults = rows;
+
+      if (!rows.length) {
+        body.innerHTML = '<tr><td colspan="9">Aucun lien trouvé pour cette recherche pour le moment.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = rows.map((row) => `
+        <tr>
+          <td>
+            <div><strong>${escapeHtml(row.title || 'Résultat')}</strong></div>
+            <div class="subtext">${escapeHtml(row.details || 'Détails non disponibles')}</div>
+          </td>
+          <td>${formatMoney(row.price)}</td>
+          <td>—</td>
+          <td>—</td>
+          <td><span class="pill">—</span></td>
+          <td><span class="tag tag-unknown">N/A</span></td>
+          <td>eCarsTrade</td>
+          <td><span class="badge badge-candidate">Résultat</span></td>
+          <td><button class="btn-sm" type="button" onclick="openMatch(${Number(row.id)})">Ouvrir</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function openMatch(resultId) {
+      const result = state.currentResults.find((item) => Number(item.id) === Number(resultId));
+      if (!result) {
+        showToast('Résultat introuvable dans la recherche courante.');
+        return;
+      }
+
+      state.currentResultId = Number(result.id);
+      const listing = {
+        make: '',
+        model: '',
+        version: '',
+        mileage: result.mileage || 0,
+        fuel: result.fuel || 'n/a',
+        transmission: 'n/a',
+        country_origin: '',
+        coc_status: 'unknown',
+        maintenance_book_status: 'unknown',
+        history_status: 'unknown',
+        vat_status: 'unknown',
+        price_buy: result.price || null
+      };
+      const pricing = {
+        platform_fee: null,
+        transport_cost: null,
+        prep_cost: null,
+        admin_cost: null,
+        warranty_reserve: null,
+        safety_buffer: null,
+        resale_estimate: null
+      };
+      const match = {
+        decision: 'candidate',
+        total_cost: null,
+        estimated_margin: null,
+        score: null,
+        admin_summary: result.url ? `Lien sélectionné : ${result.url}` : '',
+        review_notes: '',
+        reviewed_at: null
+      };
+
+      document.getElementById('match-title').textContent = result.title || 'Fiche candidat';
+      document.getElementById('match-subtitle').textContent = `${Number(listing.mileage || 0).toLocaleString('fr-FR')} km · ${listing.fuel || 'n/a'} · ${listing.transmission || 'n/a'} · ${listing.country_origin || ''}`.trim();
+
+      const badge = document.getElementById('match-badge');
+      badge.textContent = 'Résultat';
+      badge.className = 'badge badge-candidate';
+
+      document.getElementById('doc-coc').innerHTML = renderDocTag(listing.coc_status, 'Oui');
+      document.getElementById('doc-maintenance').innerHTML = renderDocTag(listing.maintenance_book_status, 'Confirme');
+      document.getElementById('doc-history').innerHTML = renderDocTag(listing.history_status, 'Confirme');
+      document.getElementById('doc-vat').innerHTML = renderVatTag(listing.vat_status);
+
+      document.getElementById('price-buy').textContent = formatMoney(listing.price_buy || 0);
+      document.getElementById('price-platform').textContent = formatMoney(pricing.platform_fee || 0);
+      document.getElementById('price-transport').textContent = formatMoney(pricing.transport_cost || 0);
+      document.getElementById('price-prep').textContent = formatMoney(pricing.prep_cost || 0);
+      document.getElementById('price-admin').textContent = formatMoney(pricing.admin_cost || 0);
+      document.getElementById('price-reserve').textContent = formatMoney(pricing.warranty_reserve || 0);
+      document.getElementById('price-buffer').textContent = formatMoney(pricing.safety_buffer || 0);
+      document.getElementById('price-total').textContent = formatMoney(match.total_cost || 0);
+      document.getElementById('price-resale').textContent = formatMoney(pricing.resale_estimate || 0);
+      document.getElementById('price-margin').textContent = formatMoney(match.estimated_margin || 0);
+      document.getElementById('match-score').textContent = `${Number(match.score || 0)} / 100`;
+      document.getElementById('admin-summary-input').value = match.admin_summary || '';
+      document.getElementById('review-notes-input').value = match.review_notes || '';
+
+      const reviewedAt = match.reviewed_at ? new Date(match.reviewed_at).toLocaleString('fr-FR') : '—';
+      document.getElementById('decision-history').innerHTML = `
+        <div class="run-row">
+          <div class="run-main">
+            <div class="run-title">${decisionLabel(match.decision)}</div>
+          <div class="run-meta">${escapeHtml(match.admin_summary || 'Aucun r\u00e9sum\u00e9 admin.')}</div>
+          </div>
+          <span class="pill">${escapeHtml(reviewedAt)}</span>
+        </div>
+      `;
+
+      showSection('fiche', document.querySelector('.nav-btn[data-section="fiche"]'));
+    }
+
+    function loadSettings() {
+      document.getElementById('setting-platform-fee').value = 0;
+      document.getElementById('setting-transport-cost').value = 0;
+      document.getElementById('setting-prep-cost').value = 0;
+      document.getElementById('setting-admin-cost').value = 0;
+      document.getElementById('setting-warranty-reserve').value = 0;
+      document.getElementById('setting-safety-buffer').value = 0;
+      document.getElementById('setting-reject-below-margin').value = 2000;
+      document.getElementById('setting-candidate-from-margin').value = 2000;
+      document.getElementById('setting-priority-from-margin').value = 3000;
+      document.getElementById('setting-scan-morning').value = '08:00';
+      document.getElementById('setting-scan-evening').value = '17:00';
+    }
+
+    function saveSettings() {
+      showToast('Les paramètres ne sont pas encore branchés sur ton backend actuel.');
+    }
+
+    async function runSearch(searchId) {
+      clearPanelError();
+      await adminFetch(`/searches/${searchId}/run`, { method: 'POST' });
+      showToast('Recherche relancée.');
+      await Promise.all([loadDashboard(), loadRequests()]);
+      if (state.currentSearchId === searchId) {
+        await loadMatches();
+      }
+    }
+
+    async function runAllSearches() {
+      clearPanelError();
+      const result = await adminFetch('/searches?per_page=100');
+      const searches = (result.data || []).filter((row) => row.status === 'active' || row.status === 'new');
+      if (!searches.length) {
+        showToast('Aucune recherche active à lancer.');
+        return;
+      }
+      await Promise.all(searches.map((search) => adminFetch(`/searches/${search.id}/run`, { method: 'POST' })));
+      showToast(`${searches.length} recherche(s) relancée(s).`);
+      await Promise.all([loadDashboard(), loadRequests()]);
+    }
+
+    function pauseRequest() {
+      showToast('Le mode pause/reprise n’est pas encore branché côté backend.');
+    }
+
+    function résuméRequest() {
+      showToast('Le mode pause/reprise n’est pas encore branché côté backend.');
+    }
+
+    function filterTable() {
+      loadMatches().catch((error) => {
+        showPanelError(error.message);
+      });
+    }
+
+    function showModal(action) {
+      if (!state.currentResultId) {
+        showToast('Ouvre d’abord une fiche résultat.');
+        return;
+      }
+      state.modalAction = action;
+      document.getElementById('modal-title').textContent = 'Fonctionnalité à brancher';
+      document.getElementById('modal-sub').textContent = 'Les actions de validation manuelle ne sont pas encore disponibles dans ton backend actuel.';
+      const confirmBtn = document.getElementById('modal-confirm');
+      confirmBtn.className = 'btn';
+      confirmBtn.textContent = 'Compris';
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      state.modalAction = null;
+    }
+
+    function dismissModal(event) {
+      if (event.target.id === 'modal-overlay') {
+        closeModal();
+      }
+    }
+
+    function confirmModal() {
+      closeModal();
+      showToast('Action notée. On pourra brancher cette étape ensuite côté backend.');
+    }
+
+    async function bootstrapAdmin() {
+      clearPanelError();
+      loadSettings();
+      await Promise.all([
+        loadAdminProfile(),
+        loadDashboard(),
+        loadRequests()
+      ]);
+      await loadMatches();
+    }
+
+    document.getElementById('admin-login-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearAuthFeedback();
+      const btn = document.getElementById('login-btn');
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const adminCode = document.getElementById('login-admin-code').value.trim();
+      const remember = document.getElementById('login-remember').checked;
+
+      btn.disabled = true;
+      btn.textContent = 'Connexion...';
+      try {
+        await loginAdmin(email, password, adminCode, remember);
+        showDashShell();
+        await bootstrapAdmin();
+      } catch (error) {
+        showAuthError(error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Se connecter';
+      }
+    });
+
+    document.getElementById('admin-go-forgot-link').addEventListener('click', (event) => {
+      event.preventDefault();
+      showAdminAuthMode('forgot');
+    });
+
+    document.getElementById('admin-back-login-link').addEventListener('click', (event) => {
+      event.preventDefault();
+      showAdminAuthMode('login');
+    });
+
+    document.getElementById('admin-reset-back-login-link').addEventListener('click', (event) => {
+      event.preventDefault();
+      showAdminAuthMode('login');
+    });
+
+    document.getElementById('admin-forgot-form').addEventListener('submit', requestAdminPasswordReset);
+    document.getElementById('admin-reset-form').addEventListener('submit', submitAdminResetPassword);
+    document.getElementById('admin-profile-form').addEventListener('submit', saveAdminProfile);
+    document.getElementById('ecarstrade-account-form').addEventListener('submit', saveEcarsTradeAccount);
+    document.getElementById('admin-password-form').addEventListener('submit', saveAdminPassword);
+    document.getElementById('partner-health-filter')?.addEventListener('change', () => renderPartnerList(state.partners));
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!state.token || adminResetMode === 'reset') {
+        showAuthShell();
+        setupAdminResetPrefill();
+        return;
+      }
+      showDashShell();
+      try {
+        await bootstrapAdmin();
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    });
+  </script>
+  <script>
+    function selectedDecisionFilter() {
+      const raw = document.getElementById('filter-decision').value || '';
+      return raw === 'manual_review' ? 'on_hold' : raw;
+    }
+
+    async function loadRequests() {
+      try {
+        clearPanelError();
+        const status = document.getElementById('requests-filter-status').value;
+        const query = new URLSearchParams({ per_page: '50' });
+
+        if (status) {
+          query.set('status', status === 'closed' ? 'completed' : status);
+        }
+
+        const result = await adminFetch(`/requests?${query.toString()}`);
+        const rows = result.data || [];
+        const body = document.getElementById('requests-body');
+
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="7">Aucune recherche client trouvée.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = rows.map((row) => {
+          const searchStatus = row.status || 'active';
+          const badgeClass = statusBadgeClass(searchStatus);
+          const client = row.client || {};
+          const budget = row.budget_max != null ? formatMoney(row.budget_max) : '—';
+
+          return `
+            <tr>
+              <td>
+                <div><strong>${escapeHtml(client.full_name || row.client_name || 'Client')}</strong></div>
+                <div class="subtext">${escapeHtml(client.email || row.client_email || '')}</div>
+                <div class="subtext">${escapeHtml(client.phone || row.client_phone || '')}</div>
+              </td>
+              <td>${escapeHtml(row.criteria_summary || '')}</td>
+              <td>${budget}</td>
+              <td>${escapeHtml(row.last_run_at ? new Date(row.last_run_at).toLocaleString('fr-FR') : '—')}</td>
+              <td><span class="badge ${badgeClass}">${escapeHtml(statusLabel(searchStatus))}</span></td>
+              <td>
+                ${client.consent_email ? '<span class="tag tag-ok">Email</span>' : '<span class="tag tag-unknown">Email</span>'}
+                ${client.consent_sms ? '<span class="tag tag-ok">SMS</span>' : '<span class="tag tag-unknown">SMS</span>'}
+              </td>
+              <td>
+                <div class="action-group">
+                  <button class="btn-sm" type="button" onclick="openRequestCandidate(${Number(row.id)})">Fiche</button>
+                  <button class="btn-sm" type="button" onclick="viewResults(${Number(row.id)})">Résultats</button>
+                  <button class="btn-sm primary" type="button" onclick="runSearch(${Number(row.id)})">Relancer</button>
+                  ${searchStatus === 'active' ? `<button class="btn-sm" type="button" onclick="pauseRequest(${Number(row.id)})">Pause</button>` : ''}
+                  ${searchStatus === 'paused' ? `<button class="btn-sm" type="button" onclick="résuméRequest(${Number(row.id)})">Reprendre</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('requests-body').innerHTML = '<tr><td colspan="7">Impossible de charger les demandes.</td></tr>';
+        showPanelError(error.message);
+      }
+    }
+
+    async function viewResults(searchId) {
+      try {
+        state.currentSearchId = Number(searchId);
+        const searchResponse = await adminFetch(`/requests/${searchId}`);
+        state.currentSearch = searchResponse.data || null;
+        await loadMatches();
+        showSection('resultats', document.querySelector('.nav-btn[data-section="resultats"]'));
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function openRequestCandidate(searchId) {
+      try {
+        clearPanelError();
+        state.currentSearchId = Number(searchId);
+        const searchResponse = await adminFetch(`/requests/${searchId}`);
+        const searchData = searchResponse.data || {};
+        state.currentSearch = searchData;
+        renderRequestContext(searchData, {});
+
+        const matchesResponse = await adminFetch(`/requests/${searchId}/matches`);
+        const matches = await loadCandidateMatchesForSearch(searchId, matchesResponse.data || []);
+
+        if (!matches.length) {
+          state.currentResultId = null;
+          state.currentCandidateMatches = [];
+          state.candidateMatchesSearchId = Number(searchId);
+          renderCandidateListings([]);
+          document.getElementById('match-title').textContent = searchData.criteria_summary
+            ? `Fiche client · ${searchData.criteria_summary}`
+            : 'Fiche client';
+          document.getElementById('match-subtitle').textContent = 'Aucun résultat eCarsTrade disponible pour cette demande pour le moment.';
+          const badge = document.getElementById('match-badge');
+          badge.textContent = 'Demande';
+          badge.className = 'badge badge-review';
+          resetCandidatePricing();
+          showSection('fiche', document.querySelector('.nav-btn[data-section="fiche"]'));
+          showToast('Aucun résultat eCarsTrade n’est encore disponible pour cette demande.');
+          return;
+        }
+
+        await openMatch(matches[0].id, searchData);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function loadMatches() {
+      const body = document.getElementById('results-body');
+
+      try {
+        clearPanelError();
+        const decision = selectedDecisionFilter();
+        let endpoint = '/matches?per_page=50';
+
+        if (decision) {
+          endpoint += `&decision=${encodeURIComponent(decision)}`;
+        }
+
+        if (state.currentSearchId) {
+          endpoint = `/requests/${state.currentSearchId}/matches`;
+          if (decision) {
+            endpoint += `?decision=${encodeURIComponent(decision)}`;
+          }
+        }
+
+        const result = await adminFetch(endpoint);
+        const rows = result.data || [];
+        state.currentResults = rows;
+
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="9">Aucun résultat à afficher pour le filtre courant.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = rows.map((row) => `
+          <tr>
+            <td>
+              <div><strong>${escapeHtml(row.listing?.vehicle_label || 'Résultat')}</strong></div>
+              <div class="subtext">${escapeHtml(row.client?.full_name || '')}</div>
+            </td>
+            <td>${formatMoney(row.listing?.price_buy)}</td>
+            <td>${formatMoney(row.total_cost)}</td>
+            <td>${formatMoney(row.estimated_margin)}</td>
+            <td><span class="pill">${escapeHtml(row.score ?? '—')}</span></td>
+            <td>${renderDocsStatus(row.listing || {})}</td>
+            <td>${escapeHtml(row.listing?.source_type_label || row.listing?.source_type || row.listing?.source_name || 'ecarstrade')}</td>
+            <td><span class="badge ${decisionBadgeClass(row.decision)}">${escapeHtml(decisionLabel(row.decision))}</span></td>
+            <td><button class="btn-sm" type="button" onclick="openMatch(${Number(row.id)})">Ouvrir</button></td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        body.innerHTML = '<tr><td colspan="9">Impossible de charger les résultats.</td></tr>';
+        showPanelError(error.message);
+      }
+    }
+
+    async function openMatch(resultId, searchData = null) {
+      try {
+        clearPanelError();
+        const response = await adminFetch(`/matches/${resultId}`);
+        const match = response.data || {};
+        const listing = match.listing || {};
+        const pricing = match.pricing || {};
+
+        state.currentResultId = Number(match.id || resultId);
+        state.currentSearchId = Number(match.search_id || state.currentSearchId || 0) || null;
+        state.currentSearch = match.search_request || searchData || state.currentSearch;
+
+        if (state.currentSearchId && state.candidateMatchesSearchId !== state.currentSearchId) {
+          await loadCandidateMatchesForSearch(state.currentSearchId);
+        } else {
+          renderCandidateListings(state.currentCandidateMatches);
+        }
+
+        renderRequestContext(state.currentSearch, match);
+        renderSourceContext(match);
+
+        document.getElementById('match-title').textContent =
+          `${listing.make || ''} ${listing.model || ''} ${listing.version || ''}`.trim() || listing.vehicle_label || 'Fiche candidat';
+        document.getElementById('match-subtitle').textContent =
+          `${match.listing_type_label || listing.source_type_label || listingTypeLabel(match.listing_type || listing.source_type)} · ${Number(listing.mileage || 0).toLocaleString('fr-FR')} km · ${listing.fuel || 'n/a'} · ${listing.transmission || 'n/a'} · ${listing.country_origin || ''}`.trim();
+
+        const badge = document.getElementById('match-badge');
+        badge.textContent = decisionLabel(match.decision);
+        badge.className = `badge ${decisionBadgeClass(match.decision)}`;
+
+        document.getElementById('doc-coc').innerHTML = renderDocTag(listing.coc_status, 'Oui');
+        document.getElementById('doc-maintenance').innerHTML = renderDocTag(listing.maintenance_book_status, 'Confirmé');
+        document.getElementById('doc-history').innerHTML = renderDocTag(listing.history_status, 'Confirmé');
+        document.getElementById('doc-vat').innerHTML = renderVatTag(listing.vat_status);
+
+        document.getElementById('price-buy').textContent = formatMoney(listing.price_buy);
+        document.getElementById('price-platform').textContent = formatMoney(pricing.platform_fee);
+        document.getElementById('price-transport').textContent = formatMoney(pricing.transport_cost);
+        document.getElementById('price-prep').textContent = formatMoney(pricing.prep_cost);
+        document.getElementById('price-admin').textContent = formatMoney(pricing.admin_cost);
+        document.getElementById('price-reserve').textContent = formatMoney(pricing.warranty_reserve);
+        document.getElementById('price-buffer').textContent = formatMoney(pricing.safety_buffer);
+        document.getElementById('price-total').textContent = formatMoney(match.total_cost);
+        document.getElementById('price-resale').textContent = formatMoney(pricing.resale_estimate);
+        document.getElementById('price-margin').textContent = formatMoney(match.estimated_margin);
+        document.getElementById('match-score').textContent = `${Number(match.score || 0)} / 100`;
+        document.getElementById('admin-summary-input').value = match.admin_summary || '';
+        document.getElementById('review-notes-input').value = match.review_notes || '';
+        renderDecisionHistory(match);
+        showSection('fiche', document.querySelector('.nav-btn[data-section="fiche"]'));
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const result = await adminFetch('/settings');
+        const settings = result.data || {};
+        const pricing = settings.pricing || {};
+        const thresholds = settings.thresholds || {};
+        const schedule = settings.schedule || {};
+        const routing = settings.routing || {};
+
+        document.getElementById('setting-platform-fee').value = pricing.platform_fee ?? 0;
+        document.getElementById('setting-transport-cost').value = pricing.transport_cost ?? 0;
+        document.getElementById('setting-prep-cost').value = pricing.prep_cost ?? 0;
+        document.getElementById('setting-admin-cost').value = pricing.admin_cost ?? 0;
+        document.getElementById('setting-warranty-reserve').value = pricing.warranty_reserve ?? 0;
+        document.getElementById('setting-safety-buffer').value = pricing.safety_buffer ?? 0;
+        document.getElementById('setting-reject-below-margin').value = thresholds.reject_below_margin ?? 2000;
+        document.getElementById('setting-candidate-from-margin').value = thresholds.candidate_from_margin ?? 2000;
+        document.getElementById('setting-priority-from-margin').value = thresholds.priority_from_margin ?? 3000;
+        document.getElementById('setting-scan-morning').value = schedule.scan_morning ?? '08:00';
+        document.getElementById('setting-scan-evening').value = schedule.scan_evening ?? '17:00';
+        state.routingOrganizationIds = Array.isArray(routing.selected_organization_ids)
+          ? routing.selected_organization_ids.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+          : [];
+
+        if (state.partners.length) {
+          renderPartnerList(state.partners);
+        }
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function saveSettings() {
+      try {
+        clearPanelError();
+        const payload = {
+          pricing: {
+            platform_fee: Number(document.getElementById('setting-platform-fee').value || 0),
+            transport_cost: Number(document.getElementById('setting-transport-cost').value || 0),
+            prep_cost: Number(document.getElementById('setting-prep-cost').value || 0),
+            admin_cost: Number(document.getElementById('setting-admin-cost').value || 0),
+            warranty_reserve: Number(document.getElementById('setting-warranty-reserve').value || 0),
+            safety_buffer: Number(document.getElementById('setting-safety-buffer').value || 0)
+          },
+          thresholds: {
+            reject_below_margin: Number(document.getElementById('setting-reject-below-margin').value || 0),
+            candidate_from_margin: Number(document.getElementById('setting-candidate-from-margin').value || 0),
+            priority_from_margin: Number(document.getElementById('setting-priority-from-margin').value || 0)
+          },
+          schedule: {
+            scan_morning: document.getElementById('setting-scan-morning').value || '08:00',
+            scan_evening: document.getElementById('setting-scan-evening').value || '17:00',
+            timezone: 'Europe/Paris'
+          },
+          routing: {
+            selected_organization_ids: state.routingOrganizationIds
+          }
+        };
+
+        await adminFetch('/settings', {
+          method: 'PATCH',
+          body: JSON.stringify(payload)
+        });
+
+        showToast('Paramètres enregistrés.');
+        await loadSettings();
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    function toggleRoutingPartner(partnerId, checked) {
+      const normalizedId = Number(partnerId);
+      if (!Number.isFinite(normalizedId) || normalizedId <= 0) {
+        return;
+      }
+
+      const ids = new Set(state.routingOrganizationIds.map((id) => Number(id)));
+      if (checked) {
+        ids.add(normalizedId);
+      } else {
+        ids.delete(normalizedId);
+      }
+
+      state.routingOrganizationIds = Array.from(ids).sort((left, right) => left - right);
+      renderPartnerList(state.partners);
+      saveSettings();
+    }
+
+    async function confirmDeletePartner(partnerId, partnerName) {
+      const normalizedId = Number(partnerId);
+      if (!Number.isFinite(normalizedId) || normalizedId <= 0) {
+        return;
+      }
+
+      const confirmed = window.confirm(`Supprimer le garage "${partnerName || 'ce garage'}" ? Cette action le retire de la diffusion client et désactivé ses accès admin.`);
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        clearPanelError();
+        const result = await adminFetch(`/partners/${normalizedId}`, { method: 'DELETE' });
+        showToast(result.message || 'Garage supprime.');
+        await Promise.all([loadPartners(), loadSettings(), loadDashboard(), loadRequests()]);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function runSearch(searchId) {
+      try {
+        clearPanelError();
+        await adminFetch(`/requests/${searchId}/run`, { method: 'POST' });
+        showToast('Recherche relancée.');
+        await Promise.all([loadDashboard(), loadRequests()]);
+        if (state.currentSearchId === Number(searchId)) {
+          await loadMatches();
+        }
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function runAllSearches() {
+      try {
+        clearPanelError();
+        const result = await adminFetch('/search-runs/run-all', { method: 'POST' });
+        showToast(`${Number(result.data?.count || 0)} recherche(s) relancée(s).`);
+        await Promise.all([loadDashboard(), loadRequests(), loadMatches()]);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function pauseRequest(searchId) {
+      try {
+        clearPanelError();
+        await adminFetch(`/requests/${searchId}/pause`, { method: 'POST' });
+        showToast('Recherche mise en pause.');
+        await Promise.all([loadDashboard(), loadRequests()]);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    async function résuméRequest(searchId) {
+      try {
+        clearPanelError();
+        await adminFetch(`/requests/${searchId}/résumé`, { method: 'POST' });
+        showToast('Recherche réactivée.');
+        await Promise.all([loadDashboard(), loadRequests()]);
+      } catch (error) {
+        showPanelError(error.message);
+      }
+    }
+
+    function filterTable() {
+      loadMatches().catch((error) => {
+        showPanelError(error.message);
+      });
+    }
+
+    function showModal(action) {
+      if (!state.currentResultId) {
+        showToast('Ouvre d’abord une fiche résultat.');
+        return;
+      }
+
+      state.modalAction = action;
+      const modalTitle = document.getElementById('modal-title');
+      const modalSub = document.getElementById('modal-sub');
+      const confirmBtn = document.getElementById('modal-confirm');
+
+      if (action === 'approve') {
+        modalTitle.textContent = 'Approuver cette annonce';
+        modalSub.textContent = 'Cette annonce sera marquée comme approuvée dans le dashboard.';
+        confirmBtn.className = 'btn';
+        confirmBtn.textContent = 'Approuver';
+      } else if (action === 'reject') {
+        modalTitle.textContent = 'Rejetér cette annonce';
+        modalSub.textContent = 'Cette annonce sera marquée comme rejetée.';
+        confirmBtn.className = 'btn-danger';
+        confirmBtn.textContent = 'Rejetér';
+      } else if (action === 'wait') {
+        modalTitle.textContent = 'Mettre en attente';
+        modalSub.textContent = 'Cette annonce sera conservée en attente de vérification.';
+        confirmBtn.className = 'btn-secondary';
+        confirmBtn.textContent = 'Mettre en attente';
+      } else {
+        modalTitle.textContent = 'Marquer comme envoyé au client';
+        modalSub.textContent = 'Cette action trace uniquement ton envoi manuel au client.';
+        confirmBtn.className = 'btn';
+        confirmBtn.textContent = 'Tracer l’envoi';
+      }
+
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    async function confirmModal() {
+      if (!state.currentResultId || !state.modalAction) {
+        closeModal();
+        return;
+      }
+
+      try {
+        clearPanelError();
+        const adminSummary = document.getElementById('admin-summary-input').value.trim();
+        const reviewNotes = document.getElementById('review-notes-input').value.trim();
+        let endpoint = '';
+        let payload = {
+          admin_summary: adminSummary,
+          review_notes: reviewNotes
+        };
+
+        if (state.modalAction === 'approve') {
+          endpoint = `/matches/${state.currentResultId}/approve`;
+        } else if (state.modalAction === 'reject') {
+          endpoint = `/matches/${state.currentResultId}/reject`;
+        } else if (state.modalAction === 'wait') {
+          endpoint = `/matches/${state.currentResultId}/hold`;
+        } else {
+          endpoint = `/matches/${state.currentResultId}/mark-shared`;
+          payload = {
+            ...payload,
+            shared_channel: 'manual',
+            shared_note: reviewNotes || 'Envoi manuel tracé depuis le dashboard.'
+          };
+        }
+
+        await adminFetch(endpoint, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        closeModal();
+        await Promise.all([loadDashboard(), loadMatches(), openMatch(state.currentResultId)]);
+        showToast('Action enregistrée.');
+      } catch (error) {
+        closeModal();
+        showPanelError(error.message);
+      }
+    }
+
+    function renderPartnerList(rows) {
+      const node = document.getElementById('partner-list');
+
+      if (!rows || !rows.length) {
+        node.innerHTML = '<div class="empty-state">Aucun partenaire cr\u00e9\u00e9 pour le moment.</div>';
+        return;
+      }
+
+      const ecarsTradeTagClass = (integration) => {
+        if (!integration?.configured) return 'tag-missing';
+        if (integration.status === 'ok') return 'tag-ok';
+        if (integration.status === 'failed') return 'tag-missing';
+        return 'tag-unknown';
+      };
+
+      const formatPartnerCheck = (value) => {
+        if (!value) return 'Jamais test\u00e9';
+
+        try {
+          return new Date(value).toLocaleString('fr-FR');
+        } catch (error) {
+          return value;
+        }
+      };
+
+      node.innerHTML = rows.map((partner) => `
+        <div class="partner-row">
+          <div class="partner-row-top">
+            <div>
+              <div class="partner-name">${escapeHtml(partner.name || 'Partenaire')}</div>
+              <div class="partner-meta">${escapeHtml(partner.location || 'Localisation non renseign\u00e9e')}</div>
+            </div>
+            <span class="partner-code">${escapeHtml(partner.partner_code || 'CODE')}</span>
+          </div>
+          <div class="partner-row-bottom">
+            <div class="partner-meta">${escapeHtml(partner.primary_admin?.email || 'Email admin indisponible')}</div>
+            <div class="partner-meta">${Number(partner.stats?.clients_count || 0)} client(s) · ${Number(partner.stats?.searches_count || 0)} demande(s)</div>
+          </div>
+          <div class="partner-status-row">
+            <span class="tag ${ecarsTradeTagClass(partner.ecarstrade)}">${escapeHtml(partner.ecarstrade?.configured ? 'eCarsTrade configur\u00e9' : 'eCarsTrade non configur\u00e9')}</span>
+            <span class="tag ${ecarsTradeTagClass(partner.ecarstrade)}">${escapeHtml(partner.ecarstrade?.status_label || 'Non configur\u00e9')}</span>
+            <span class="tag ${partner.ecarstrade?.is_active ? 'tag-ok' : 'tag-unknown'}">${escapeHtml(partner.ecarstrade?.is_active ? 'Actif' : 'Inactif')}</span>
+          </div>
+          <div class="partner-meta">Admin : ${escapeHtml(partner.admin_code || 'ADM')}</div>
+          <div class="partner-meta">Dernier test eCarsTrade : ${escapeHtml(formatPartnerCheck(partner.ecarstrade?.last_auth_checked_at))}</div>
+          ${partner.ecarstrade?.last_auth_error ? `<div class="partner-meta partner-error">Derni\u00e8re erreur : ${escapeHtml(partner.ecarstrade.last_auth_error)}</div>` : ''}
+          <div class="partner-meta">Lien public : ${escapeHtml(partner.public_form_path || 'html//demande')}</div>
+          <div class="partner-meta">${escapeHtml(partner.description || 'Aucune description renseign\u00e9e.')}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderPartnerList(rows) {
+      const node = document.getElementById('partner-list');
+      const filterNode = document.getElementById('partner-health-filter');
+      const summaryNode = document.getElementById('partner-filter-summary');
+
+      if (!rows || !rows.length) {
+      node.innerHTML = '<div class="empty-state">Aucun partenaire cr\u00e9\u00e9 pour le moment.</div>';
+        if (summaryNode) {
+          summaryNode.textContent = 'Aucun garage disponible pour le moment.';
+        }
+        return;
+      }
+
+      const ecarsTradeTagClass = (integration) => {
+        if (!integration?.configured) return 'tag-missing';
+        if (integration.status === 'ok') return 'tag-ok';
+        if (integration.status === 'failed') return 'tag-missing';
+        return 'tag-unknown';
+      };
+
+      const formatPartnerCheck = (value) => {
+        if (!value) return 'Jamais test\u00e9';
+
+        try {
+          return new Date(value).toLocaleString('fr-FR');
+        } catch (error) {
+          return value;
+        }
+      };
+
+      const partnerFilterState = (partner) => {
+        const integration = partner?.ecarstrade || {};
+
+        if (!integration.configured) return 'not_configured';
+        if (integration.status === 'failed') return 'failed';
+        if (integration.status === 'ok' && integration.is_active) return 'ready';
+        return 'attention';
+      };
+
+      const filterValue = filterNode?.value || 'all';
+      const filteredRows = rows.filter((partner) => filterValue === 'all' || partnerFilterState(partner) === filterValue);
+
+      if (summaryNode) {
+      summaryNode.textContent = `${filteredRows.length} garage(s) affich\u00e9(s) sur ${rows.length}.`;
+      }
+
+      if (!filteredRows.length) {
+        node.innerHTML = '<div class="empty-state">Aucun garage ne correspond \u00e0 ce filtre pour le moment.</div>';
+        return;
+      }
+
+      node.innerHTML = filteredRows.map((partner) => `
+        <div class="partner-row">
+          <div class="partner-row-top">
+            <div>
+              <div class="partner-name">${escapeHtml(partner.name || 'Partenaire')}</div>
+              <div class="partner-meta">${escapeHtml(partner.location || 'Localisation non renseign\u00e9e')}</div>
+            </div>
+            <span class="partner-code">${escapeHtml(partner.partner_code || 'CODE')}</span>
+          </div>
+          <div class="partner-row-bottom">
+            <div class="partner-meta">${escapeHtml(partner.primary_admin?.email || 'Email admin indisponible')}</div>
+            <div class="partner-meta">${Number(partner.stats?.clients_count || 0)} client(s) · ${Number(partner.stats?.searches_count || 0)} demande(s)</div>
+          </div>
+          <div class="partner-status-row">
+            <span class="tag ${ecarsTradeTagClass(partner.ecarstrade)}">${escapeHtml(partner.ecarstrade?.configured ? 'eCarsTrade configur\u00e9' : 'eCarsTrade non configur\u00e9')}</span>
+            <span class="tag ${ecarsTradeTagClass(partner.ecarstrade)}">${escapeHtml(partner.ecarstrade?.status_label || 'Non configur\u00e9')}</span>
+            <span class="tag ${partner.ecarstrade?.is_active ? 'tag-ok' : 'tag-unknown'}">${escapeHtml(partner.ecarstrade?.is_active ? 'Actif' : 'Inactif')}</span>
+          </div>
+          <div class="partner-meta">Admin : ${escapeHtml(partner.admin_code || 'ADM')}</div>
+          <div class="partner-meta">Dernier test eCarsTrade : ${escapeHtml(formatPartnerCheck(partner.ecarstrade?.last_auth_checked_at))}</div>
+          ${partner.ecarstrade?.last_auth_error ? `<div class="partner-meta partner-error">Derni\u00e8re erreur : ${escapeHtml(partner.ecarstrade.last_auth_error)}</div>` : ''}
+          <div class="partner-meta">Lien public : ${escapeHtml(partner.public_form_path || 'html//demande')}</div>
+          <div class="partner-meta">${escapeHtml(partner.description || 'Aucune description renseign\u00e9e.')}</div>
+          <div class="row-actions" style="margin-top:12px;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
+              <input
+                type="checkbox"
+                ${state.routingOrganizationIds.includes(Number(partner.id)) ? 'checked' : ''}
+                onchange="toggleRoutingPartner(${Number(partner.id)}, this.checked)"
+              >
+              <span>Recevoir les demandes clients</span>
+            </label>
+            <button
+              class="btn-danger"
+              type="button"
+              onclick='confirmDeletePartner(${Number(partner.id)}, ${JSON.stringify(partner.name || 'ce garage')})'
+            >Supprimer</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function bootstrapAdmin() {
+      clearPanelError();
+      await loadAdminProfile();
+      await Promise.all([
+        loadDashboard(),
+        loadRequests(),
+        loadSettings(),
+        loadEcarsTradeAccount(),
+        loadAssociationRequests(),
+        loadAssociationCodes()
+      ]);
+      await loadPartners();
+      await loadMatches();
+    }
+
+    function enhancePasswordFields() {
+      document.querySelectorAll('input[type="password"]').forEach((input) => {
+        if (input.dataset.passwordEnhanced === '1') return;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'password-field';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'password-toggle';
+        button.setAttribute('aria-label', 'Afficher le mot de passe');
+        button.setAttribute('aria-pressed', 'false');
+        button.setAttribute('title', 'Afficher le mot de passe');
+        button.innerHTML = '<span class="password-toggle-icon" aria-hidden="true"></span>';
+        button.addEventListener('click', () => {
+          const shouldHide = input.type === 'text';
+          input.type = shouldHide ? 'password' : 'text';
+          button.classList.toggle('is-visible', !shouldHide);
+          button.setAttribute('aria-pressed', shouldHide ? 'false' : 'true');
+          button.setAttribute('aria-label', shouldHide ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+          button.setAttribute('title', shouldHide ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+        });
+
+        wrapper.appendChild(button);
+        input.dataset.passwordEnhanced = '1';
+      });
+    }
+
+    enhancePasswordFields();
+  </script>
+</body>
+</html>
+
+
+
+
+
