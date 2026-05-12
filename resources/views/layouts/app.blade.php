@@ -6,8 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'MBPRESTIGE – Marketplace automobile professionnelle')</title>
     <meta name="description" content="@yield('meta_description', 'Achetez des véhicules d\'occasion en gros. Enchères, prix fixes, stock partenaire.')">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <script defer src="{{ asset('js/app.js') }}"></script>
+    @if (file_exists(public_path('build/manifest.json')))
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @else
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @endif
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
