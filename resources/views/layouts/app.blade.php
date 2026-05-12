@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'MBPRESTIGE – Marketplace automobile professionnelle')</title>
+    <title>@yield('title', 'MBPRESTIGE - Marketplace automobile professionnelle')</title>
     <meta name="description" content="@yield('meta_description', 'Achetez des véhicules d\'occasion en gros. Enchères, prix fixes, stock partenaire.')">
     @if (file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])

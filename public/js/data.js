@@ -1,7 +1,7 @@
 (() => {
   const makes = ['BMW','Audi','Volkswagen','Mercedes','Peugeot','Renault','Toyota','Ford','Tesla','Opel'];
-  const models = ['320d','A4','Golf','C220','3008','M?gane','RAV4','Focus','Model 3','Astra'];
-  const fuels = ['Diesel','Essence','Hybride','?lectrique'];
+  const models = ['320d','A4','Golf','C220','3008','Mégane','RAV4','Focus','Model 3','Astra'];
+  const fuels = ['Diesel','Essence','Hybride','Électrique'];
   const gearboxes = ['Automatique','Manuelle'];
   const types = ['auction_open','auction_blind','fixed_price','partner_stock'];
   const countries = ['FR','BE','DE','NL','ES','IT'];

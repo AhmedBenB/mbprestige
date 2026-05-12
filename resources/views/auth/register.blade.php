@@ -101,7 +101,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe *</label>
                     <div class="relative">
                         <input id="register_password" type="password" name="password" required minlength="8"
                                class="w-full border border-gray-300 rounded-xl px-4 pr-12 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -120,7 +120,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirmation du mot de passe</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirmation du mot de passe *</label>
                     <div class="relative">
                         <input id="register_password_confirmation" type="password" name="password_confirmation" required
                                class="w-full border border-gray-300 rounded-xl px-4 pr-12 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -167,4 +167,3 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
-
