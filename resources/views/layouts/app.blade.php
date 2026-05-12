@@ -38,8 +38,8 @@
                 {{-- Auth --}}
                 <div class="flex items-center gap-3">
                     @auth
-                        <a href="{{ route('app.dashboard') }}" class="text-sm font-medium text-gray-700 hover:text-blue-700">Mon espace</a>
-                        @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('app.profile.show') }}" class="text-sm font-medium text-gray-700 hover:text-blue-700">Mon espace</a>
+                        @if(\Illuminate\Support\Facades\Route::has('admin.listings.index') && auth()->user()->isAdmin())
                             <a href="{{ route('admin.listings.index') }}" class="text-sm font-medium text-orange-600 hover:text-orange-700">Admin</a>
                         @endif
                         <form action="{{ route('logout') }}" method="POST">

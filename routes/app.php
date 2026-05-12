@@ -48,6 +48,9 @@ Route::middleware(['auth'])->prefix('app')->name('app.')->group(function () {
 
     Route::get('/profil', [ProfileController::class, 'show'])->name('profile.show');
     Route::patch('/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profil/mot-de-passe', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::patch('/profil/ecarstrade', [ProfileController::class, 'updateEcarsTrade'])->name('profile.ecarstrade.update');
+    Route::post('/profil/ecarstrade/test', [ProfileController::class, 'testEcarsTrade'])->name('profile.ecarstrade.test');
 
     Route::get('/vehicules/{listing}', [VehicleController::class, 'show'])->name('vehicles.show');
 

@@ -87,4 +87,5 @@ Route::get('/client/email/verify/{id}/{hash}', [ClientEmailVerificationControlle
 Route::redirect('/dashboard_admin_sourcing.html', '/espace-garage', 301);
 Route::redirect('/login.html', '/connexion', 301);
 
+require __DIR__ . '/app.php';
 require __DIR__ . '/auth.php';
