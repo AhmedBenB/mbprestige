@@ -67,4 +67,21 @@ class FakeEcarsTradeConnector implements EcarsTradeConnectorInterface
             $base
         );
     }
+
+    public function fetchListingDetails(EcarsTradeListingData $listing): array
+    {
+        return [
+            'images' => [
+                'https://images.example.test/ecarstrade/' . rawurlencode((string) ($listing->sourceRef ?? 'listing')) . '/1.jpg',
+                'https://images.example.test/ecarstrade/' . rawurlencode((string) ($listing->sourceRef ?? 'listing')) . '/2.jpg',
+            ],
+            'documents' => [
+                [
+                    'type' => 'report',
+                    'title' => 'Expert report',
+                    'url' => 'https://docs.example.test/ecarstrade/' . rawurlencode((string) ($listing->sourceRef ?? 'listing')) . '/report.pdf',
+                ],
+            ],
+        ];
+    }
 }

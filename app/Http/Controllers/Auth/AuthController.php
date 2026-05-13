@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -20,10 +19,6 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    // ─────────────────────────────────────────────────────────────
-    // SHOW FORMS
-    // ─────────────────────────────────────────────────────────────
-
     public function showLogin(): View
     {
         return view('auth.login');
@@ -47,32 +42,28 @@ class AuthController extends Controller
         ]);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // LOGIN
-    // ─────────────────────────────────────────────────────────────
-
     public function login(Request $request): RedirectResponse
     {
         $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        // Rate limiting : 5 tentatives / 60s par IP+email
-        $key = 'login.' . Str::lower($request->email) . '|' . $request->ip();
+        $key = 'login.' . Str::lower((string) $request->email) . '|' . $request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             throw ValidationException::withMessages([
-                'email' => "Trop de tentatives. Réessayez dans {$seconds} secondes.",
+                'email' => "Trop de tentatives. Reessayez dans {$seconds} secondes.",
             ]);
         }
 
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
             Log::warning('Web login failed', [
-                'email' => Str::lower($request->email),
+                'email' => Str::lower((string) $request->email),
                 'ip' => $request->ip(),
             ]);
+
             throw ValidationException::withMessages([
                 'email' => 'Email ou mot de passe incorrect.',
             ]);
@@ -81,88 +72,76 @@ class AuthController extends Controller
         RateLimiter::clear($key);
         $request->session()->regenerate();
 
-        if (auth()->user()->status !== 'active') {
+        /** @var User $user */
+        $user = auth()->user();
+
+        if ($user->status !== 'active') {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => 'Compte désactivé. Contactez le support.',
+                'email' => 'Compte desactive. Contactez le support.',
             ]);
         }
 
-        // Mise à jour last_login_at
-        auth()->user()->update(['last_login_at' => now()]);
+        $user->update(['last_login_at' => now()]);
+
         Log::info('Web login success', [
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'ip' => $request->ip(),
         ]);
 
-        // Redirection selon le rôle
         $intended = session()->pull('url.intended');
-        if ($intended) return redirect($intended);
+        if ($intended) {
+            return redirect($intended);
+        }
 
-        return match(auth()->user()->role) {
-            'admin'  => \Illuminate\Support\Facades\Route::has('admin.listings.index')
+        return match ($user->role) {
+            'admin' => \Illuminate\Support\Facades\Route::has('admin.listings.index')
                 ? redirect()->route('admin.listings.index')
                 : redirect()->route('app.dashboard'),
-            default  => redirect()->route('app.dashboard'),
+            default => redirect()->route('app.dashboard'),
         };
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // REGISTER
-    // ─────────────────────────────────────────────────────────────
 
     public function register(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'first_name'    => ['required', 'string', 'max:100'],
-            'last_name'     => ['required', 'string', 'max:100'],
-            'email'         => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone'         => ['required', 'string', 'max:30'],
-            'password'      => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
-            'company_name'  => ['required', 'string', 'max:255'],
-            'vat_number'    => ['nullable', 'string', 'max:50'],
-            'country'       => ['required', 'string', 'size:2'],
-            'accept_terms'  => ['accepted'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'date_of_birth' => ['nullable', 'date', 'before_or_equal:today'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone_country_code' => ['required', 'string', 'regex:/^\+\d{1,4}$/'],
+            'phone_local' => ['required', 'string', 'regex:/^[0-9\s().-]{4,20}$/'],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
         ]);
 
-        // Créer l'organisation
-        $org = Organization::create([
-            'name'       => $data['company_name'],
-            'vat_number' => $data['vat_number'] ?? null,
-            'country'    => $data['country'],
-            'status'     => 'active',
-            'user_tier'  => 'trial',
-        ]);
+        $phone = $this->formatInternationalPhone($data['phone_country_code'], $data['phone_local']);
 
-        // Créer l'utilisateur
         $user = User::create([
-            'name'            => $data['first_name'] . ' ' . $data['last_name'],
-            'first_name'      => $data['first_name'],
-            'last_name'       => $data['last_name'],
-            'email'           => $data['email'],
-            'phone'           => $data['phone'],
-            'password'        => Hash::make($data['password']),
-            'organization_id' => $org->id,
-            'role'            => 'client',
-            'status'          => 'active',
+            'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'date_of_birth' => $data['date_of_birth'] ?? null,
+            'email' => $data['email'],
+            'phone' => $phone,
+            'password' => Hash::make($data['password']),
+            'role' => User::ROLE_CLIENT,
+            'status' => 'active',
+            'is_active' => true,
         ]);
 
         event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
+
         Log::info('Web register success', [
             'user_id' => $user->id,
-            'organization_id' => $org->id,
+            'organization_id' => $user->organization_id,
             'ip' => $request->ip(),
         ]);
 
         return redirect()->route('app.dashboard')
-            ->with('success', "Bienvenue {$user->first_name} ! Votre compte a été créé.");
+            ->with('success', "Bienvenue {$user->first_name} ! Votre compte a ete cree.");
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // LOGOUT
-    // ─────────────────────────────────────────────────────────────
 
     public function logout(Request $request): RedirectResponse
     {
@@ -176,12 +155,8 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home')
-            ->with('success', 'Vous avez été déconnecté.');
+            ->with('success', 'Vous avez ete deconnecte.');
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // FORGOT PASSWORD
-    // ─────────────────────────────────────────────────────────────
 
     public function sendResetLink(Request $request): RedirectResponse
     {
@@ -190,33 +165,38 @@ class AuthController extends Controller
         $status = Password::sendResetLink($request->only('email'));
 
         return $status === Password::RESET_LINK_SENT
-            ? back()->with('success', 'Un email de réinitialisation a été envoyé.')
+            ? back()->with('success', 'Un email de reinitialisation a ete envoye.')
             : back()->withErrors(['email' => __($status)]);
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // RESET PASSWORD
-    // ─────────────────────────────────────────────────────────────
 
     public function resetPassword(Request $request): RedirectResponse
     {
         $request->validate([
-            'token'    => ['required'],
-            'email'    => ['required', 'email'],
+            'token' => ['required'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            function (User $user, string $password): void {
                 $user->forceFill(['password' => Hash::make($password)])
-                     ->setRememberToken(Str::random(60));
+                    ->setRememberToken(Str::random(60));
                 $user->save();
             }
         );
 
         return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('success', 'Mot de passe modifié avec succès.')
+            ? redirect()->route('login')->with('success', 'Mot de passe modifie avec succes.')
             : back()->withErrors(['email' => __($status)]);
+    }
+
+    private function formatInternationalPhone(string $countryCode, string $localNumber): string
+    {
+        $code = preg_replace('/\D+/', '', $countryCode) ?? '';
+        $number = preg_replace('/\D+/', '', $localNumber) ?? '';
+        $number = ltrim($number, '0');
+
+        return '+' . $code . $number;
     }
 }

@@ -172,6 +172,57 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
         return [];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function fetchListingDetails(EcarsTradeListingData $listing): array
+    {
+        $this->authenticate();
+
+        $url = $this->normalizeUrl($listing->url);
+        if ($url === null) {
+            return [];
+        }
+
+        try {
+            $response = $this->requestListingDetailPage($url);
+            $this->guardSuccessfulResponse($response, 'page detail annonce eCarsTrade');
+        } catch (Throwable $exception) {
+            $this->logAuthWarning('eCarsTrade listing detail fetch failed', [
+                'listing_url' => $url,
+                'source_ref' => $listing->sourceRef,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        $html = $response->body();
+        $images = $this->extractListingImageUrlsFromHtml($html);
+        $documentUrls = $this->extractListingDocumentUrlsFromHtml($html);
+        $documents = array_map(function (string $documentUrl): array {
+            $path = (string) parse_url($documentUrl, PHP_URL_PATH);
+            $filename = $path !== '' ? basename($path) : '';
+
+            return [
+                'type' => $this->guessDocumentType($documentUrl),
+                'title' => $filename !== '' ? $filename : 'document',
+                'url' => $documentUrl,
+            ];
+        }, $documentUrls);
+
+        return [
+            'images' => $images,
+            'documents' => $documents,
+            'raw' => [
+                'detail_url' => $url,
+                'effective_url' => (string) Arr::get($response->handlerStats(), 'url', $url),
+                'image_count' => count($images),
+                'document_count' => count($documents),
+            ],
+        ];
+    }
+
     private function fetchLoginPage(): Response
     {
         return $this->httpClient()->get($this->resolveUrl((string) config('ecarstrade.login_url')));
@@ -180,6 +231,16 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
     private function fetchSearchPage(): Response
     {
         return $this->httpClient()->get($this->resolveSearchUrl());
+    }
+
+    private function requestListingDetailPage(string $url): Response
+    {
+        return $this->httpClient()
+            ->withHeaders([
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ])
+            ->get($url);
     }
 
     private function submitLogin(array $payload): Response
@@ -296,9 +357,18 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
 
                 $apiResponse = $this->submitApiLogin($payload, $candidateApiUrl);
                 $this->guardSuccessfulApiLogin($apiResponse);
-                $this->guardAuthenticatedProbe('api auth', [
-                    'candidate_api_url' => $candidateApiUrl,
-                ]);
+                if (!(bool) Arr::get(config('ecarstrade.auth', []), 'skip_probe_after_api_auth', true)) {
+                    $this->guardAuthenticatedProbe('api auth', [
+                        'candidate_api_url' => $candidateApiUrl,
+                    ]);
+                } else {
+                    $this->logAuthInfo('eCarsTrade auth API accepted without probe', [
+                        'candidate_api_url' => $candidateApiUrl,
+                        'access_token_present' => $this->accessToken !== null,
+                        'refresh_token_present' => $this->refreshToken !== null,
+                        'cookies' => $this->exportCookies(),
+                    ]);
+                }
 
                 return null;
             } catch (Throwable $exception) {
@@ -1216,6 +1286,160 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
         return rtrim((string) config('ecarstrade.base_url'), '/') . '/' . ltrim($url, '/');
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function extractListingImageUrlsFromHtml(string $html): array
+    {
+        if ($html === '') {
+            return [];
+        }
+
+        $urls = [];
+        $xpath = $this->createXPath($html);
+        $nodes = $xpath->query('//img[@src or @data-src or @data-original or @data-lazy or @srcset] | //a[@data-src or @href]');
+
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                foreach (['src', 'data-src', 'data-original', 'data-lazy', 'href'] as $attribute) {
+                    $candidate = trim((string) $xpath->evaluate("string(@{$attribute})", $node));
+                    $normalized = $this->normalizeExtractedUrl($candidate);
+
+                    if ($normalized !== null && $this->isLikelyVehicleImageUrl($normalized)) {
+                        $urls[] = $normalized;
+                    }
+                }
+
+                $srcset = trim((string) $xpath->evaluate('string(@srcset)', $node));
+                if ($srcset !== '') {
+                    foreach (explode(',', $srcset) as $entry) {
+                        $parts = preg_split('/\s+/', trim($entry));
+                        $candidate = $parts[0] ?? null;
+                        $normalized = $this->normalizeExtractedUrl(is_string($candidate) ? $candidate : null);
+                        if ($normalized !== null && $this->isLikelyVehicleImageUrl($normalized)) {
+                            $urls[] = $normalized;
+                        }
+                    }
+                }
+            }
+        }
+
+        preg_match_all('/https?:\\\\?\/\\\\?\/[^"\'\s<>]+/i', $html, $matches);
+        foreach ($matches[0] ?? [] as $rawMatch) {
+            $normalized = $this->normalizeExtractedUrl((string) $rawMatch);
+            if ($normalized !== null && $this->isLikelyVehicleImageUrl($normalized)) {
+                $urls[] = $normalized;
+            }
+        }
+
+        return array_values(array_unique($urls));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractListingDocumentUrlsFromHtml(string $html): array
+    {
+        if ($html === '') {
+            return [];
+        }
+
+        $urls = [];
+        $xpath = $this->createXPath($html);
+        $nodes = $xpath->query('//a[@href]');
+
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                $candidate = trim((string) $xpath->evaluate('string(@href)', $node));
+                $normalized = $this->normalizeExtractedUrl($candidate);
+                if ($normalized !== null && $this->isLikelyDocumentUrl($normalized)) {
+                    $urls[] = $normalized;
+                }
+            }
+        }
+
+        preg_match_all('/https?:\\\\?\/\\\\?\/[^"\'\s<>]+/i', $html, $matches);
+        foreach ($matches[0] ?? [] as $rawMatch) {
+            $normalized = $this->normalizeExtractedUrl((string) $rawMatch);
+            if ($normalized !== null && $this->isLikelyDocumentUrl($normalized)) {
+                $urls[] = $normalized;
+            }
+        }
+
+        return array_values(array_unique($urls));
+    }
+
+    private function normalizeExtractedUrl(?string $url): ?string
+    {
+        if ($url === null) {
+            return null;
+        }
+
+        $candidate = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5));
+        if ($candidate === '' || Str::startsWith($candidate, ['#', 'javascript:', 'mailto:', 'tel:'])) {
+            return null;
+        }
+
+        $candidate = str_replace(['\\/', '\\u002F'], '/', $candidate);
+        $candidate = preg_replace('/\\\\u([0-9a-fA-F]{4})/', '', $candidate) ?? $candidate;
+        $candidate = trim($candidate, " \t\n\r\0\x0B\"'");
+
+        return $this->normalizeUrl($candidate);
+    }
+
+    private function isLikelyVehicleImageUrl(string $url): bool
+    {
+        $path = Str::lower((string) parse_url($url, PHP_URL_PATH));
+        if ($path === '') {
+            return false;
+        }
+
+        if (!preg_match('/\.(jpg|jpeg|png|webp|gif|avif)$/i', $path)) {
+            return false;
+        }
+
+        foreach (['icon', 'logo', 'sprite', 'avatar', 'flag', 'placeholder'] as $blocked) {
+            if (str_contains($path, $blocked)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isLikelyDocumentUrl(string $url): bool
+    {
+        $path = Str::lower((string) parse_url($url, PHP_URL_PATH));
+        if ($path === '') {
+            return false;
+        }
+
+        if (preg_match('/\.(pdf|doc|docx|xls|xlsx|xml|csv|zip)$/i', $path)) {
+            return true;
+        }
+
+        foreach (['/document', '/download', '/files/'] as $hint) {
+            if (str_contains($path, $hint)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function guessDocumentType(string $url): string
+    {
+        $path = Str::lower((string) parse_url($url, PHP_URL_PATH));
+
+        return match (true) {
+            str_ends_with($path, '.pdf') => 'pdf',
+            str_ends_with($path, '.xml') => 'xml',
+            str_ends_with($path, '.doc'), str_ends_with($path, '.docx') => 'doc',
+            str_ends_with($path, '.xls'), str_ends_with($path, '.xlsx'), str_ends_with($path, '.csv') => 'sheet',
+            default => 'other',
+        };
+    }
+
     private function extractMoney(?string $value): ?float
     {
         if ($value === null || trim($value) === '') {
@@ -1835,6 +2059,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             'allow_redirects' => true,
             'http_errors' => false,
             'timeout' => (int) config('ecarstrade.timeout', 30),
+            'verify' => (bool) config('ecarstrade.ssl_verify', true),
         ])->withHeaders([
             'User-Agent' => (string) config('ecarstrade.user_agent'),
             'Accept-Language' => 'fr-FR,fr;q=0.9,en;q=0.8',

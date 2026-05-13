@@ -54,12 +54,24 @@ class EcarsTradeListingMapper
      */
     private function extractImages(array $raw): array
     {
-        $images = data_get($raw, 'images', data_get($raw, 'media.images', []));
+        $images = $this->firstArrayByPaths($raw, [
+            'images',
+            'media.images',
+            'raw.images',
+            'raw.photos',
+            'raw.gallery',
+            'raw.media.images',
+            'raw.api_data.images',
+            'raw.api_data.photos',
+            'raw.api_data.gallery',
+            'raw.api_data.media.images',
+        ]);
+
         if (!is_array($images)) {
-            return [];
+            $images = [];
         }
 
-        return array_values(array_filter(array_map(static function ($value): ?string {
+        $normalized = array_values(array_filter(array_map(static function ($value): ?string {
             if (is_string($value)) {
                 return trim($value) !== '' ? trim($value) : null;
             }
@@ -73,6 +85,12 @@ class EcarsTradeListingMapper
 
             return null;
         }, $images)));
+
+        if ($normalized !== []) {
+            return $normalized;
+        }
+
+        return $this->extractImageUrlsFromHtml((string) data_get($raw, 'raw.card_html_excerpt', ''));
     }
 
     /**
@@ -194,5 +212,38 @@ class EcarsTradeListingMapper
         }
 
         return Str::slug($label);
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     * @param  array<int, string>  $paths
+     */
+    private function firstArrayByPaths(array $raw, array $paths): ?array
+    {
+        foreach ($paths as $path) {
+            $value = data_get($raw, $path);
+            if (is_array($value) && $value !== []) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractImageUrlsFromHtml(string $html): array
+    {
+        if ($html === '') {
+            return [];
+        }
+
+        preg_match_all('/https?:\/\/[^"\']+\.(?:jpg|jpeg|png|webp|gif)(?:\?[^"\']*)?/i', $html, $matches);
+        if (!isset($matches[0]) || !is_array($matches[0])) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map(static fn (string $url): string => trim($url), $matches[0])));
     }
 }

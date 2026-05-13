@@ -14,6 +14,7 @@ return [
         env('ECARSTRADE_MODE', 'fake') === 'live' ? 'http' : 'fake'
     ),
     'timeout' => (int) env('ECARSTRADE_TIMEOUT', 30),
+    'ssl_verify' => filter_var(env('ECARSTRADE_SSL_VERIFY', true), FILTER_VALIDATE_BOOLEAN),
     'user_agent' => env(
         'ECARSTRADE_USER_AGENT',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0 Safari/537.36'
@@ -46,6 +47,7 @@ return [
         'access_cookie_name' => env('ECARSTRADE_AUTH_ACCESS_COOKIE_NAME', 'eCT/user'),
         'refresh_cookie_name' => env('ECARSTRADE_AUTH_REFRESH_COOKIE_NAME', 'eCT/refresh-token'),
         'encode_cookie_names' => filter_var(env('ECARSTRADE_AUTH_ENCODE_COOKIE_NAMES', true), FILTER_VALIDATE_BOOLEAN),
+        'skip_probe_after_api_auth' => filter_var(env('ECARSTRADE_SKIP_PROBE_AFTER_API_AUTH', true), FILTER_VALIDATE_BOOLEAN),
         'cookie_domain' => env('ECARSTRADE_AUTH_COOKIE_DOMAIN', ''),
         'cookie_lifetime' => (int) env('ECARSTRADE_AUTH_COOKIE_LIFETIME', 1209600),
     ],
@@ -77,6 +79,8 @@ return [
         'sync_limit' => (int) env('ECARSTRADE_SYNC_LIMIT', 20),
         'sync_every_minutes' => (int) env('ECARSTRADE_SYNC_EVERY_MINUTES', 30),
         'auto_publish' => filter_var(env('ECARSTRADE_AUTO_PUBLISH', false), FILTER_VALIDATE_BOOLEAN),
+        'fetch_details' => filter_var(env('ECARSTRADE_FETCH_DETAILS', true), FILTER_VALIDATE_BOOLEAN),
+        'detail_delay_ms' => (int) env('ECARSTRADE_DETAIL_DELAY_MS', 150),
         'publish_media' => filter_var(env('ECARSTRADE_PUBLISH_MEDIA', true), FILTER_VALIDATE_BOOLEAN),
         'publish_documents' => filter_var(env('ECARSTRADE_PUBLISH_DOCUMENTS', true), FILTER_VALIDATE_BOOLEAN),
         'margin_min' => (float) env('ECARSTRADE_MARGIN_MIN', 2000),

@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminEcarsTradeAccountController;
 use App\Http\Controllers\AdminEcarsTradeImportController;
 use App\Http\Controllers\AdminPartnerController;
 use App\Http\Controllers\AdminSearchController;
+use App\Http\Controllers\AdminSalesController;
 use App\Http\Controllers\ClientAssociationController;
 use App\Http\Controllers\ClientAuthController;
 use App\Http\Controllers\ClientEmailVerificationController;
@@ -87,6 +88,14 @@ Route::prefix('admin')->group(function () {
         Route::post('/matches/{result}/reject', [AdminSearchController::class, 'reject']);
         Route::post('/matches/{result}/hold', [AdminSearchController::class, 'hold']);
         Route::post('/matches/{result}/mark-shared', [AdminSearchController::class, 'markShared']);
+
+        Route::get('/purchases', [AdminSalesController::class, 'purchases']);
+        Route::get('/purchases/{id}', [AdminSalesController::class, 'purchase']);
+        Route::patch('/purchases/{id}', [AdminSalesController::class, 'updatePurchase']);
+
+        Route::get('/payments', [AdminSalesController::class, 'payments']);
+        Route::get('/payments/{id}', [AdminSalesController::class, 'payment']);
+        Route::patch('/payments/{id}', [AdminSalesController::class, 'updatePayment']);
     });
 });
 

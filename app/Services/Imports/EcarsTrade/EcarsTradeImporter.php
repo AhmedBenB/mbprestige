@@ -215,7 +215,17 @@ class EcarsTradeImporter
             return;
         }
 
-        $documents = data_get($rawPayload, 'documents', data_get($rawPayload, 'media.documents', []));
+        $documents = $this->firstArrayByPaths($rawPayload, [
+            'documents',
+            'media.documents',
+            'raw.documents',
+            'raw.files',
+            'raw.media.documents',
+            'raw.api_data.documents',
+            'raw.api_data.files',
+            'raw.api_data.media.documents',
+        ]);
+
         if (!is_array($documents) || $documents === []) {
             return;
         }
@@ -245,6 +255,22 @@ class EcarsTradeImporter
                 'is_published' => true,
             ]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     * @param  array<int, string>  $paths
+     */
+    private function firstArrayByPaths(array $raw, array $paths): ?array
+    {
+        foreach ($paths as $path) {
+            $value = data_get($raw, $path);
+            if (is_array($value) && $value !== []) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function syncPriceEstimate(ExternalListing $listing): void

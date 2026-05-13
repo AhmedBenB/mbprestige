@@ -52,7 +52,7 @@ class EcarsTradeClient
                     }
 
                     $seen[$externalId] = true;
-                    $results[] = $listing;
+                    $results[] = $this->enrichWithDetails($listing, $source, $meta);
 
                     if (count($results) >= $limit) {
                         return $results;
@@ -71,6 +71,53 @@ class EcarsTradeClient
         }
 
         return $results;
+    }
+
+    private function enrichWithDetails(EcarsTradeListingData $listing, Source $source, array $meta): EcarsTradeListingData
+    {
+        $fetchDetails = (bool) ($meta['fetch_details'] ?? config('ecarstrade.import.fetch_details', true));
+        if (!$fetchDetails) {
+            return $listing;
+        }
+
+        try {
+            $details = $this->connector->fetchListingDetails($listing);
+            $rawPayload = $listing->rawPayload;
+            $rawPayload['details'] = $details;
+
+            $enriched = EcarsTradeListingData::fromArray([
+                'source_ref' => $listing->sourceRef,
+                'url' => $listing->url,
+                'title' => $listing->title,
+                'make' => $listing->make,
+                'model' => $listing->model,
+                'price' => $listing->price,
+                'year' => $listing->year,
+                'fuel' => $listing->fuel,
+                'gearbox' => $listing->gearbox,
+                'mileage' => $listing->mileage,
+                'color' => $listing->color,
+                'raw' => $rawPayload,
+                'images' => is_array($details['images'] ?? null) ? $details['images'] : [],
+                'documents' => is_array($details['documents'] ?? null) ? $details['documents'] : [],
+            ]);
+
+            $delayMs = max(0, (int) ($meta['detail_delay_ms'] ?? config('ecarstrade.import.detail_delay_ms', 150)));
+            if ($delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+
+            return $enriched;
+        } catch (\Throwable $exception) {
+            Log::warning('eCarsTrade listing detail enrichment failed', [
+                'source_id' => $source->id,
+                'source_ref' => $listing->sourceRef,
+                'url' => $listing->url,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $listing;
+        }
     }
 
     /**

@@ -4,17 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Organization extends Model
 {
     protected $fillable = [
-        'name', 'legal_name', 'vat_number', 'country', 'city',
-        'address', 'zip_code', 'status', 'deposit_balance', 'credit_limit', 'user_tier',
+        'name',
+        'location',
+        'description',
+        'slug',
+        'partner_code',
+        'admin_code',
+        'is_active',
     ];
 
     protected $casts = [
-        'deposit_balance' => 'decimal:2',
-        'credit_limit' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     public function users(): HasMany
@@ -22,41 +27,34 @@ class Organization extends Model
         return $this->hasMany(User::class);
     }
 
-    public function listings(): HasMany
+    public function adminUsers(): HasMany
     {
-        return $this->hasMany(Listing::class);
+        return $this->hasMany(User::class)->where('role', User::ROLE_ADMIN);
     }
 
-    public function bids(): HasMany
+    public function clientUsers(): HasMany
     {
-        return $this->hasMany(Bid::class);
+        return $this->hasMany(User::class)->where('role', User::ROLE_CLIENT);
     }
 
-    public function purchases(): HasMany
+    public function searches(): HasMany
     {
-        return $this->hasMany(Purchase::class);
+        return $this->hasMany(CustomerSearch::class);
     }
 
-    public function payments(): HasMany
+    public function associationCodes(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(ClientAssociationCode::class);
     }
 
-    public function supportTickets(): HasMany
+    public function associationRequests(): HasMany
     {
-        return $this->hasMany(SupportTicket::class);
+        return $this->hasMany(ClientAssociationRequest::class);
     }
 
-    public function isGolden(): bool { return $this->user_tier === 'golden'; }
-    public function isSilver(): bool { return $this->user_tier === 'silver'; }
-    public function isTrial(): bool  { return $this->user_tier === 'trial'; }
-
-    public function maxActiveBids(): int
+    public function ecarsTradeAccount(): HasOne
     {
-        return match($this->user_tier) {
-            'golden' => 999,
-            'silver' => 50,
-            default  => 5,
-        };
+        return $this->hasOne(OrganizationSourceAccount::class)
+            ->where('source', OrganizationSourceAccount::SOURCE_ECARSTRADE);
     }
 }

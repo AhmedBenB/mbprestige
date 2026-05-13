@@ -13,4 +13,9 @@ interface EcarsTradeConnectorInterface
      * @return EcarsTradeListingData[]
      */
     public function search(SearchCriteriaData $criteria): array;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function fetchListingDetails(EcarsTradeListingData $listing): array;
 }
