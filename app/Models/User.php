@@ -2,78 +2,152 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Notifications\ClientVerifyEmailNotification;
+use Database\Factories\UserFactory;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+#[Fillable([
+    'name',
+    'organization_id',
+    'first_name',
+    'last_name',
+    'date_of_birth',
+    'email',
+    'phone',
+    'password',
+    'is_admin',
+    'role',
+    'is_active',
+])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, MustVerifyEmailTrait, Notifiable;
 
-    protected $fillable = [
-        'name',
-        'first_name',
-        'last_name',
-        'email',
-        'phone',
-        'password',
-        'organization_id',
-        'role',
-        'status',
-        'last_login_at',
-    ];
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_CLIENT = 'client';
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected static function booted(): void
+    {
+        static::saving(function (self $user): void {
+            $user->syncRoleFlags();
+            $user->syncDisplayName();
+        });
+    }
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'last_login_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'date_of_birth' => 'date',
+            'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function customerSearches(): HasMany
+    {
+        return $this->hasMany(CustomerSearch::class, 'user_id');
+    }
 
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
-
-    public function bids(): HasMany
+    
+    public function createdSearches(): HasMany
     {
-        return $this->hasMany(Bid::class);
+        return $this->hasMany(CustomerSearch::class, 'created_by');
     }
 
-    public function favorites(): HasMany
+    public function createdAssociationCodes(): HasMany
     {
-        return $this->hasMany(Favorite::class);
+        return $this->hasMany(ClientAssociationCode::class, 'created_by_user_id');
     }
 
-    public function savedSearches(): HasMany
+    public function associationRequests(): HasMany
     {
-        return $this->hasMany(SavedSearch::class);
+        return $this->hasMany(ClientAssociationRequest::class, 'user_id');
     }
 
-    public function purchases(): HasMany
+    public function reviewedAssociationRequests(): HasMany
     {
-        return $this->hasMany(Purchase::class);
+        return $this->hasMany(ClientAssociationRequest::class, 'reviewed_by_user_id');
     }
 
-    public function payments(): HasMany
+    public function isSuperAdmin(): bool
     {
-        return $this->hasMany(Payment::class);
+        return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
-    public function supportTickets(): HasMany
+    public function isPartnerAdmin(): bool
     {
-        return $this->hasMany(SupportTicket::class);
+        return $this->role === self::ROLE_ADMIN;
     }
 
-    public function supportTicketMessages(): HasMany
+    public function isClient(): bool
     {
-        return $this->hasMany(SupportTicketMessage::class);
+        return ! $this->isAdmin();
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new ClientVerifyEmailNotification());
+    }
+
+    private function syncRoleFlags(): void
+    {
+        $role = strtolower(trim((string) $this->role));
+
+        if ($role === self::ROLE_SUPER_ADMIN) {
+            $this->role = self::ROLE_SUPER_ADMIN;
+            $this->is_admin = true;
+
+            return;
+        }
+
+        if ($this->is_admin || $role === self::ROLE_ADMIN) {
+            $this->role = self::ROLE_ADMIN;
+            $this->is_admin = true;
+
+            return;
+        }
+
+        $this->role = self::ROLE_CLIENT;
+        $this->is_admin = false;
+    }
+
+    private function syncDisplayName(): void
+    {
+        $parts = array_filter([
+            trim((string) $this->first_name),
+            trim((string) $this->last_name),
+        ]);
+
+        if ($parts !== []) {
+            $this->name = implode(' ', $parts);
+
+            return;
+        }
+
+        if (trim((string) $this->name) === '') {
+            $this->name = (string) $this->email;
+        }
+    }
+        public function isAdmin(): bool
+    {
+        return (bool) ($this->is_admin ?? false)
+            || in_array(strtolower((string) ($this->role ?? '')), ['admin', 'super_admin'], true);
     }
 }
