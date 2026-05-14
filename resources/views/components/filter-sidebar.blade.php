@@ -1,11 +1,25 @@
-{{-- Composant réutilisable : sidebar filtres --}}
+﻿@php
+    $fuelLabels = [
+        'diesel' => 'Diesel',
+        'essence' => 'Essence',
+        'hybride' => 'Hybride',
+        'electrique' => 'Electrique',
+        'gpl' => 'GPL',
+        'gaz' => 'Gaz',
+    ];
+
+    $gearboxLabels = [
+        'automatic' => 'Automatique',
+        'manual' => 'Manuelle',
+        'semi-automatic' => 'Semi-automatique',
+    ];
+@endphp
+
 <form method="GET" id="filter-form" class="space-y-6">
-    {{-- Conserver le tri courant --}}
     @if(request('sort'))
         <input type="hidden" name="sort" value="{{ request('sort') }}">
     @endif
 
-    {{-- Marque --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
@@ -25,7 +39,6 @@
         </div>
     </div>
 
-    {{-- Carburant --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
@@ -41,7 +54,7 @@
                        @checked(request('fuel') === $fuel)
                        onchange="document.getElementById('filter-form').submit()"
                        class="text-blue-600 focus:ring-blue-500">
-                {{ $fuel }}
+                {{ $fuelLabels[$fuel] ?? ucfirst($fuel) }}
             </label>
             @endforeach
             @if(request('fuel'))
@@ -51,11 +64,10 @@
         </div>
     </div>
 
-    {{-- Boîte de vitesses --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
-            Boîte
+            Boite
             <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -67,17 +79,20 @@
                        @checked(request('gearbox') === $gearbox)
                        onchange="document.getElementById('filter-form').submit()"
                        class="text-blue-600 focus:ring-blue-500">
-                {{ $gearbox }}
+                {{ $gearboxLabels[$gearbox] ?? ucfirst($gearbox) }}
             </label>
             @endforeach
+            @if(request('gearbox'))
+                <a href="{{ request()->fullUrlWithQuery(['gearbox' => null]) }}"
+                   class="text-xs text-blue-700 hover:underline">Effacer</a>
+            @endif
         </div>
     </div>
 
-    {{-- Année --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
-            Année
+            Annee
             <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -87,16 +102,15 @@
                    placeholder="De" min="2000" max="{{ date('Y') }}"
                    class="w-1/2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <input type="number" name="year_max" value="{{ request('year_max') }}"
-                   placeholder="À" min="2000" max="{{ date('Y') }}"
+                   placeholder="A" min="2000" max="{{ date('Y') }}"
                    class="w-1/2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
     </div>
 
-    {{-- Kilométrage --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
-            Kilométrage max
+            Kilometrage max
             <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -108,11 +122,10 @@
         </div>
     </div>
 
-    {{-- Prix --}}
     <div x-data="{ open: true }">
         <button type="button" @click="open = !open"
                 class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
-            Prix (€)
+            Prix (EUR)
             <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -127,37 +140,6 @@
         </div>
     </div>
 
-    {{-- TVA --}}
-    <div>
-        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer font-medium">
-            <input type="checkbox" name="vat" value="1" @checked(request('vat')=='1')
-                   onchange="document.getElementById('filter-form').submit()"
-                   class="rounded text-blue-600 focus:ring-blue-500">
-            TVA déductible uniquement
-        </label>
-    </div>
-
-    {{-- Pays d'origine --}}
-    <div x-data="{ open: false }">
-        <button type="button" @click="open = !open"
-                class="flex w-full justify-between items-center font-semibold text-sm text-gray-700 mb-2">
-            Pays d'origine
-            <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </button>
-        <div x-show="open">
-            <select name="country" onchange="document.getElementById('filter-form').submit()"
-                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Tous</option>
-                @foreach($filters['countries'] as $country)
-                    <option value="{{ $country }}" @selected(request('country')===$country)>{{ $country }}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-
-    {{-- Boutons --}}
     <div class="flex gap-2 pt-2">
         <button type="submit"
                 class="flex-1 bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg hover:bg-blue-800">
@@ -165,7 +147,7 @@
         </button>
         <a href="{{ url()->current() }}"
            class="flex-1 text-center border border-gray-300 text-sm text-gray-600 py-2 rounded-lg hover:bg-gray-50">
-            Réinitialiser
+            Reinitialiser
         </a>
     </div>
 </form>

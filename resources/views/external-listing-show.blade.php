@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $payload['title'] }} - MBPRESTIGE</title>
-    <meta name="description" content="Fiche annonce MBPRESTIGE : galerie, estimation, documents, similarites et conditions d achat.">
-    <link rel="stylesheet" href="/css/external-listing.css?v=20260504a">
+    <meta name="description" content="Fiche annonce MBPRESTIGE : galerie, estimation, documents, similitudes et conditions d'achat.">
+    <link rel="stylesheet" href="/css/external-listing.css?v=20260514b">
 </head>
 <body>
 <header class="topbar">
@@ -20,14 +20,27 @@
 </header>
 
 <main class="container main-grid">
+    @if(session('success'))
+        <section class="card full-width" style="border-color:#86efac;background:#f0fdf4;">
+            <p style="margin:0;color:#166534;font-weight:600;">{{ session('success') }}</p>
+        </section>
+    @endif
+
+    @if(!empty($payload['is_expired']))
+        <section class="card full-width">
+            <h2>Annonce expiree</h2>
+            <p class="muted">Cette annonce est marquee comme expiree. Suppression automatique apres la periode de retention.</p>
+        </section>
+    @endif
+
     <section class="card media-card">
         <h2>Galerie</h2>
         @if(count($payload['images']) > 0)
-            <img id="hero-image" class="hero-image" src="{{ $payload['images'][0] }}" alt="Photo annonce">
+            <img id="hero-image" class="hero-image" src="{{ $payload['images'][0] }}" alt="Photo annonce" loading="eager" decoding="async" referrerpolicy="no-referrer">
             <div class="thumb-grid">
                 @foreach($payload['images'] as $image)
                     <button type="button" class="thumb-btn" data-image="{{ $image }}">
-                        <img src="{{ $image }}" alt="Miniature">
+                        <img src="{{ $image }}" alt="Miniature" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                     </button>
                 @endforeach
             </div>
@@ -47,16 +60,35 @@
         </div>
 
         <h2>Resume</h2>
+        @php
+            $fuelLabels = [
+                'diesel' => 'Diesel',
+                'essence' => 'Essence',
+                'hybride' => 'Hybride',
+                'electrique' => 'Electrique',
+                'électrique' => 'Electrique',
+                'ã©lectrique' => 'Electrique',
+                'gpl' => 'GPL',
+                'gaz' => 'Gaz',
+            ];
+            $gearboxLabels = [
+                'automatic' => 'Automatique',
+                'manual' => 'Manuelle',
+                'manuel' => 'Manuelle',
+                'manuelle' => 'Manuelle',
+                'semi-automatic' => 'Semi-automatique',
+                'direct no gearbox' => 'Semi-automatique',
+            ];
+        @endphp
         <ul class="kv-list">
             <li><strong>Marque:</strong> {{ $payload['make'] ?? '-' }}</li>
             <li><strong>Modele:</strong> {{ $payload['model'] ?? '-' }}</li>
             <li><strong>Annee:</strong> {{ $payload['year'] ?? '-' }}</li>
             <li><strong>Kilometrage:</strong> {{ $payload['mileage'] ? number_format((int) $payload['mileage'], 0, ',', ' ') . ' km' : '-' }}</li>
-            <li><strong>Carburant:</strong> {{ $payload['fuel'] ?? '-' }}</li>
-            <li><strong>Boite:</strong> {{ $payload['transmission'] ?? '-' }}</li>
+            <li><strong>Carburant:</strong> {{ $fuelLabels[$payload['fuel'] ?? ''] ?? ($payload['fuel'] ?? '-') }}</li>
+            <li><strong>Boite:</strong> {{ $gearboxLabels[$payload['transmission'] ?? ''] ?? ($payload['transmission'] ?? '-') }}</li>
             <li><strong>Couleur:</strong> {{ $payload['color'] ?? '-' }}</li>
-            <li><strong>Pays:</strong> {{ $payload['country'] ?? '-' }}</li>
-            <li><strong>Lieu:</strong> {{ $payload['location'] ?? '-' }}</li>
+            <li><strong>Vues:</strong> {{ number_format((int) ($payload['views_count'] ?? 0), 0, ',', ' ') }}</li>
         </ul>
     </section>
 
@@ -64,19 +96,48 @@
         <h2>Prix / estimation</h2>
         @if($payload['price_visible'] && $payload['price_amount'] !== null)
             <p class="price">{{ number_format((float) $payload['price_amount'], 0, ',', ' ') }} {{ $payload['currency'] }}</p>
-            <p class="muted">Prix source visible.</p>
+            <p class="muted">Prix MBPRESTIGE (marge incluse: {{ number_format((float) ($payload['price_margin_amount'] ?? 0), 0, ',', ' ') }} {{ $payload['currency'] }}).</p>
+            @if(isset($payload['source_price_amount']) && $payload['source_price_amount'] !== null)
+                <p class="muted">Prix source: {{ number_format((float) $payload['source_price_amount'], 0, ',', ' ') }} {{ $payload['currency'] }}</p>
+            @endif
         @elseif($payload['price_estimation'])
             <p class="price">{{ number_format((float) $payload['price_estimation']['min'], 0, ',', ' ') }} - {{ number_format((float) $payload['price_estimation']['max'], 0, ',', ' ') }} {{ $payload['currency'] }}</p>
             <p class="muted">Confiance: {{ $payload['price_estimation']['confidence_label'] }} ({{ $payload['price_estimation']['sample_size'] }} similaires)</p>
             <p class="muted">{{ $payload['price_estimation']['reason'] }}</p>
         @else
             <p class="price">Prix non visible</p>
-            <p class="muted">Estimation indisponible.</p>
+            <p class="muted">Prix estime en cours.</p>
+        @endif
+
+        @if($payload['is_auction'])
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <p><strong>Encheres recues:</strong> {{ number_format((int) ($payload['bids_count'] ?? 0), 0, ',', ' ') }}</p>
+            @if(!empty($payload['top_bid_amount']))
+                <p><strong>Meilleure enchere:</strong> {{ number_format((float) $payload['top_bid_amount'], 0, ',', ' ') }} {{ $payload['currency'] }}</p>
+            @endif
+            @if(!empty($payload['auction_available']))
+                @auth
+                    <form method="POST" action="{{ route('app.external_bids.store', ['listing' => $listing->id]) }}" style="display:grid;gap:8px;margin-top:10px;">
+                        @csrf
+                        <label for="bid_amount"><strong>Votre enchere ({{ $payload['currency'] }})</strong></label>
+                        <input id="bid_amount" name="bid_amount" type="number" min="1" step="1" required style="padding:10px;border:1px solid #d1d5db;border-radius:8px;">
+                        <button type="submit" class="download-btn" style="width:max-content;">Proposer une enchere</button>
+                        @error('bid_amount')
+                            <p style="color:#b91c1c;margin:0;">{{ $message }}</p>
+                        @enderror
+                    </form>
+                @else
+                    <p class="muted" style="margin-top:10px;">Connecte-toi pour proposer une enchere.</p>
+                    <a href="{{ route('login') }}" class="download-btn">Se connecter</a>
+                @endauth
+            @else
+                <p class="muted" style="margin-top:10px;">Enchere terminee sur la source.</p>
+            @endif
         @endif
     </section>
 
     <section class="card timer-card">
-        <h2>Chronometre enchere</h2>
+        <h2>Chronometre</h2>
         <p id="auction-timer" class="timer">-</p>
         <p class="muted">Fin source: {{ $payload['auction_end_at'] ?? 'non communiquee' }}</p>
     </section>
@@ -108,16 +169,6 @@
     </section>
 
     <section class="card">
-        <h2>Historique / rapport</h2>
-        <ul class="kv-list">
-            <li><strong>Resume:</strong> {{ $payload['history_report']['summary'] ?? '-' }}</li>
-            <li><strong>Accident:</strong> {{ $payload['history_report']['accident'] ?? '-' }}</li>
-            <li><strong>Entretien:</strong> {{ $payload['history_report']['maintenance'] ?? '-' }}</li>
-            <li><strong>Proprietaires:</strong> {{ $payload['history_report']['ownership'] ?? '-' }}</li>
-        </ul>
-    </section>
-
-    <section class="card">
         <h2>Documents</h2>
         @if(count($payload['documents']) > 0)
             <ul class="doc-list">
@@ -131,26 +182,6 @@
         @else
             <p class="muted">Aucun document disponible.</p>
         @endif
-    </section>
-
-    <section class="card">
-        <h2>Origine / source</h2>
-        <ul class="kv-list">
-            <li><strong>Fournisseur:</strong> {{ $payload['source']['name'] ?? '-' }}</li>
-            <li><strong>Code source:</strong> {{ $payload['source']['code'] ?? '-' }}</li>
-            <li><strong>Derniere synchro:</strong> {{ $payload['source']['last_seen_at'] ?? '-' }}</li>
-            <li><strong>Mise a jour source:</strong> {{ $payload['source']['source_updated_at'] ?? '-' }}</li>
-            <li><strong>Lien source:</strong> @if($payload['listing_url']) <a href="{{ $payload['listing_url'] }}" target="_blank" rel="noopener noreferrer">Ouvrir</a> @else - @endif</li>
-        </ul>
-    </section>
-
-    <section class="card">
-        <h2>Conditions d'achat</h2>
-        <ul class="kv-list">
-            @foreach($payload['purchase_conditions'] as $condition)
-                <li>{{ $condition }}</li>
-            @endforeach
-        </ul>
     </section>
 
     <section class="card full-width">
@@ -169,7 +200,7 @@
                         @else
                             <p><strong>Prix non disponible</strong></p>
                         @endif
-                        <a href="/vehicules/{{ $similar['slug'] ?: $similar['id'] }}">Voir la fiche</a>
+                        <a href="/annonces/{{ $similar['slug'] ?: $similar['id'] }}">Voir la fiche</a>
                     </article>
                 @endforeach
             </div>
@@ -185,11 +216,29 @@
     const timerEl = document.getElementById('auction-timer');
     const endAt = payload.auction_end_at ? new Date(payload.auction_end_at).getTime() : null;
 
+    function upgradeImageUrl(url) {
+      if (!url) return url;
+      let next = String(url)
+        .replace(/\/(thumb|thumbs|thumbnail|thumbnails|small|preview)\//gi, '/')
+        .replace(/([_-])(thumb|thumbnail|small|preview)(?=\.)/gi, '');
+
+      try {
+        const u = new URL(next, window.location.origin);
+        ['w', 'width', 'h', 'height', 'q', 'quality', 'fit', 'resize', 'dpr'].forEach((key) => {
+          u.searchParams.delete(key);
+        });
+        return u.toString();
+      } catch (_) {
+        return next;
+      }
+    }
+
     function renderTimer() {
-      if (!endAt || Number.isNaN(endAt)) {
-        timerEl.textContent = 'Aucune enchere active';
+      if (!payload.is_auction || !endAt || Number.isNaN(endAt)) {
+        timerEl.textContent = 'Pas de compte a rebours actif';
         return;
       }
+
       const now = Date.now();
       const diff = endAt - now;
       if (diff <= 0) {
@@ -211,10 +260,18 @@
       button.addEventListener('click', () => {
         const src = button.getAttribute('data-image');
         const hero = document.getElementById('hero-image');
-        if (hero && src) hero.src = src;
+        if (hero && src) {
+          hero.src = upgradeImageUrl(src);
+        }
       });
     });
+
+    const hero = document.getElementById('hero-image');
+    if (hero && hero.src) {
+      hero.src = upgradeImageUrl(hero.src);
+    }
   })();
 </script>
 </body>
 </html>
+
