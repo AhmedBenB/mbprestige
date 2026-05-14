@@ -2,7 +2,16 @@
     $title = trim((string) ($listing->title ?: (($listing->make ?? '') . ' ' . ($listing->model ?? ''))));
     $images = is_array($listing->images ?? null) ? $listing->images : [];
     $firstImage = isset($images[0]) ? (string) $images[0] : null;
-    $isAuction = str_starts_with((string) $listing->listing_type, 'auction_');
+    $rawListingType = $listing->listing_type ?? null;
+    $listingType = '';
+    if ($rawListingType instanceof \BackedEnum) {
+        $listingType = (string) $rawListingType->value;
+    } elseif (is_string($rawListingType)) {
+        $listingType = $rawListingType;
+    } elseif (is_scalar($rawListingType)) {
+        $listingType = (string) $rawListingType;
+    }
+    $isAuction = str_starts_with($listingType, 'auction_');
     $priceVisible = (bool) ($listing->price_visible ?? false);
     $price = $listing->price_amount;
     $estimate = $listing->latestPriceEstimate ?? null;
@@ -57,7 +66,7 @@
             @if($isExpired)
                 <span class="bg-gray-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">Expiree</span>
             @endif
-            @switch((string) $listing->listing_type)
+            @switch($listingType)
                 @case('auction_open')
                     <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Enchere ouverte</span>
                     @break
