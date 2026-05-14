@@ -1,7 +1,9 @@
 @php
     $title = trim((string) ($listing->title ?: (($listing->make ?? '') . ' ' . ($listing->model ?? ''))));
+
     $images = is_array($listing->images ?? null) ? $listing->images : [];
     $firstImage = isset($images[0]) ? (string) $images[0] : null;
+
     $rawListingType = $listing->listing_type ?? null;
     $listingType = '';
     if ($rawListingType instanceof \BackedEnum) {
@@ -11,34 +13,65 @@
     } elseif (is_scalar($rawListingType)) {
         $listingType = (string) $rawListingType;
     }
+
     $isAuction = str_starts_with($listingType, 'auction_');
     $priceVisible = (bool) ($listing->price_visible ?? false);
     $price = $listing->price_amount;
     $estimate = $listing->latestPriceEstimate ?? null;
     $displayMargin = (float) config('ecarstrade.import.display_margin', config('ecarstrade.import.margin_min', 2000));
     $displayPrice = $price !== null ? ((float) $price + $displayMargin) : null;
-    $detailsUrl = route('external-listings.show', ['identifier' => $listing->slug ?: $listing->id]);
-    $isExpired = ((string) $listing->status === 'expired')
-        || ($listing->auction_end_at && $listing->auction_end_at->isPast());
+
+    $identifier = $listing->slug ?: $listing->id;
+    $detailsUrl = \Illuminate\Support\Facades\Route::has('external-listings.show')
+        ? route('external-listings.show', ['identifier' => $identifier])
+        : ($listing->listing_url ?: '#');
+
+    $statusRaw = $listing->status ?? null;
+    $status = '';
+    if ($statusRaw instanceof \BackedEnum) {
+        $status = (string) $statusRaw->value;
+    } elseif (is_string($statusRaw)) {
+        $status = $statusRaw;
+    } elseif (is_scalar($statusRaw)) {
+        $status = (string) $statusRaw;
+    }
+
+    $isExpired = ($status === 'expired')
+        || (!empty($listing->auction_end_at) && $listing->auction_end_at->isPast());
+
+    $fuelValue = $listing->fuel ?? '';
+    if ($fuelValue instanceof \BackedEnum) {
+        $fuelValue = $fuelValue->value;
+    }
+    $fuelValue = is_scalar($fuelValue) ? (string) $fuelValue : '';
+    $fuelRaw = strtolower(trim($fuelValue));
+
+    $gearboxValue = $listing->transmission ?? '';
+    if ($gearboxValue instanceof \BackedEnum) {
+        $gearboxValue = $gearboxValue->value;
+    }
+    $gearboxValue = is_scalar($gearboxValue) ? (string) $gearboxValue : '';
+    $gearboxRaw = strtolower(trim($gearboxValue));
+
     $fuelLabels = [
         'diesel' => 'Diesel',
         'essence' => 'Essence',
         'hybride' => 'Hybride',
         'electrique' => 'Electrique',
-        'électrique' => 'Electrique',
-        'ã©lectrique' => 'Electrique',
         'gpl' => 'GPL',
         'gaz' => 'Gaz',
     ];
+
     $gearboxLabels = [
         'automatic' => 'Automatique',
         'manual' => 'Manuelle',
         'manuel' => 'Manuelle',
         'manuelle' => 'Manuelle',
         'semi-automatic' => 'Semi-automatique',
-        'direct no gearbox' => 'Semi-automatique',
+        'direct no gearbox' => 'Sans boite',
     ];
 @endphp
+
 
 <a href="{{ $detailsUrl }}"
    class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all group block">
@@ -71,7 +104,7 @@
                     <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Enchere ouverte</span>
                     @break
                 @case('auction_blind')
-                    <span class="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Enchere blind</span>
+                    <span class="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Enchere secrete</span>
                     @break
                 @case('fixed_price')
                     <span class="bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Prix fixe</span>
@@ -109,10 +142,10 @@
                 <span>{{ number_format((int) $listing->mileage, 0, ',', ' ') }} km</span>
             @endif
             @if($listing->fuel)
-                <span>{{ $fuelLabels[$listing->fuel] ?? $listing->fuel }}</span>
+                <span>{{ $fuelLabels[$fuelRaw] ?? $fuelValue }}</span>
             @endif
             @if($listing->transmission)
-                <span>{{ $gearboxLabels[$listing->transmission] ?? $listing->transmission }}</span>
+                <span>{{ $gearboxLabels[$gearboxRaw] ?? $gearboxValue }}</span>
             @endif
         </div>
 
