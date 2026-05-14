@@ -168,9 +168,9 @@ class EcarsTradeListingMapper
      */
     private function detectListingType(array $raw, ?float $price): string
     {
-        $auctionType = mb_strtolower((string) data_get($raw, 'auction_type', ''));
-        $saleType = mb_strtolower((string) data_get($raw, 'sale_type', ''));
-        $status = mb_strtolower((string) data_get($raw, 'status', ''));
+        $auctionType = strtolower((string) data_get($raw, 'auction_type', ''));
+        $saleType = strtolower((string) data_get($raw, 'sale_type', ''));
+        $status = strtolower((string) data_get($raw, 'status', ''));
         $hasAuctionEnd = $this->parseAuctionEndAt($raw) !== null;
 
         if (str_contains($saleType, 'fixed') || str_contains($auctionType, 'fixed')) {
@@ -431,7 +431,7 @@ class EcarsTradeListingMapper
         if ($raw === '') {
             return null;
         }
-        $lower = mb_strtolower($raw);
+        $lower = strtolower($raw);
         return match (true) {
             str_contains($lower, 'diesel') => 'diesel',
             str_contains($lower, 'essence'), str_contains($lower, 'petrol') => 'essence',
@@ -449,7 +449,7 @@ class EcarsTradeListingMapper
         if ($raw === '') {
             return null;
         }
-        $lower = mb_strtolower($raw);
+        $lower = strtolower($raw);
         return match (true) {
             in_array($lower, ['automatic', 'automatique', 'auto', 'aut8'], true) => 'automatic',
             in_array($lower, ['manual', 'manuel', 'manuelle'], true) => 'manual',
@@ -461,7 +461,7 @@ class EcarsTradeListingMapper
     private function normalizeColor(string $value): ?string
     {
         $raw = trim($value);
-        if ($raw === '' || in_array(mb_strtolower($raw), ['-', '--', 'n/a', 'na', 'none', 'unknown'], true)) {
+        if ($raw === '' || in_array(strtolower($raw), ['-', '--', 'n/a', 'na', 'none', 'unknown'], true)) {
             return null;
         }
         return $raw;

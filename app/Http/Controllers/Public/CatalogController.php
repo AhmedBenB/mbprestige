@@ -117,7 +117,7 @@ class CatalogController extends Controller
                 $variants = $this->fuelVariants[$fuel] ?? [$fuel];
                 $q->where(function ($q2) use ($variants): void {
                     foreach ($variants as $value) {
-                        $q2->orWhereRaw('LOWER(COALESCE(fuel, "")) = ?', [mb_strtolower($value)]);
+                        $q2->orWhereRaw('LOWER(COALESCE(fuel, "")) = ?', [strtolower($value)]);
                     }
                 });
             })
@@ -125,7 +125,7 @@ class CatalogController extends Controller
                 $variants = $this->gearboxVariants[$gearbox] ?? [$gearbox];
                 $q->where(function ($q2) use ($variants): void {
                     foreach ($variants as $value) {
-                        $q2->orWhereRaw('LOWER(COALESCE(transmission, "")) = ?', [mb_strtolower($value)]);
+                        $q2->orWhereRaw('LOWER(COALESCE(transmission, "")) = ?', [strtolower($value)]);
                     }
                 });
             })
@@ -173,13 +173,13 @@ class CatalogController extends Controller
 
     private function normalizeFuel(string $value): ?string
     {
-        $value = trim(mb_strtolower($value));
+        $value = trim(strtolower($value));
         if ($value === '' || in_array($value, ['-', 'n/a', 'na', 'other'], true)) {
             return null;
         }
 
         foreach ($this->fuelVariants as $canonical => $variants) {
-            if (in_array($value, array_map('mb_strtolower', $variants), true)) {
+            if (in_array($value, array_map('strtolower', $variants), true)) {
                 return $canonical;
             }
         }
@@ -189,13 +189,13 @@ class CatalogController extends Controller
 
     private function normalizeGearbox(string $value): ?string
     {
-        $value = trim(mb_strtolower($value));
+        $value = trim(strtolower($value));
         if ($value === '' || in_array($value, ['-', 'n/a', 'na', 'other'], true)) {
             return null;
         }
 
         foreach ($this->gearboxVariants as $canonical => $variants) {
-            if (in_array($value, array_map('mb_strtolower', $variants), true)) {
+            if (in_array($value, array_map('strtolower', $variants), true)) {
                 return $canonical;
             }
         }

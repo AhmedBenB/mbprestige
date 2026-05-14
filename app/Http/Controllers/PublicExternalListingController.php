@@ -272,7 +272,7 @@ class PublicExternalListingController extends Controller
             return '';
         }
 
-        $lower = mb_strtolower($value);
+        $lower = strtolower($value);
         if (in_array($lower, ['-', '--', 'n/a', 'na', 'none', 'null', 'unknown', 'other'], true)) {
             return '';
         }
@@ -287,7 +287,7 @@ class PublicExternalListingController extends Controller
             return '-';
         }
 
-        $lower = mb_strtolower($raw);
+        $lower = strtolower($raw);
         return match (true) {
             str_contains($lower, 'diesel') => 'diesel',
             str_contains($lower, 'essence'), str_contains($lower, 'petrol') => 'essence',
@@ -306,7 +306,7 @@ class PublicExternalListingController extends Controller
             return '-';
         }
 
-        $lower = mb_strtolower($raw);
+        $lower = strtolower($raw);
         return match (true) {
             in_array($lower, ['automatic', 'automatique', 'auto', 'aut8'], true) => 'automatic',
             in_array($lower, ['manual', 'manuel', 'manuelle'], true) => 'manual',
