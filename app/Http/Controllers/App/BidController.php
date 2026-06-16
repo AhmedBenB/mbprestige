@@ -36,6 +36,21 @@ class BidController extends Controller
         }
     }
 
+    public function update(PlaceBidRequest $request, Bid $bid): RedirectResponse
+    {
+        if ($bid->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (! $bid->isCancellable()) {
+            return back()->withErrors(['bid' => 'Cette offre ne peut plus être modifiée.']);
+        }
+
+        $bid->update(['amount' => (float) $request->amount]);
+
+        return back()->with('success', "Votre offre a été mise à jour : {$bid->fresh()->amount} {$bid->currency}.");
+    }
+
     public function destroy(Bid $bid): RedirectResponse
     {
         try {

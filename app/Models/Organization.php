@@ -16,6 +16,7 @@ class Organization extends Model
         'partner_code',
         'admin_code',
         'is_active',
+        'user_tier',
     ];
 
     protected $casts = [
@@ -57,4 +58,14 @@ class Organization extends Model
         return $this->hasOne(OrganizationSourceAccount::class)
             ->where('source', OrganizationSourceAccount::SOURCE_ECARSTRADE);
     }
+
+    public function maxActiveBids(): int
+    {   
+        return match ((string) $this->user_tier) {
+            'golden' => 50,
+            'silver' => 20,
+            default => 5,
+        };
+    }
+
 }
