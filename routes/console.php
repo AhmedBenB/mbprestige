@@ -386,4 +386,8 @@ if ((bool) config('ecarstrade.import.enabled', true)) {
     Schedule::command($command)
         ->cron("*/{$everyMinutes} * * * *")
         ->withoutOverlapping();
+
+    Schedule::command('ecarstrade:lifecycle --retention-days=0')
+        ->hourly()
+        ->withoutOverlapping();
 }

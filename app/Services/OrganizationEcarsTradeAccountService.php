@@ -49,11 +49,18 @@ class OrganizationEcarsTradeAccountService
             return null;
         }
 
-        if ($organization->relationLoaded('ecarsTradeAccount')) {
-            return $organization->ecarsTradeAccount;
+        if (method_exists($organization, 'ecarsTradeAccount')) {
+            if ($organization->relationLoaded('ecarsTradeAccount')) {
+                return $organization->ecarsTradeAccount;
+            }
+
+            return $organization->ecarsTradeAccount()->first();
         }
 
-        return $organization->ecarsTradeAccount()->first();
+        return OrganizationSourceAccount::query()
+            ->where('organization_id', $organization->id)
+            ->where('source', OrganizationSourceAccount::SOURCE_ECARSTRADE)
+            ->first();
     }
 
     public function forOrganizationId(?int $organizationId): ?OrganizationSourceAccount

@@ -3,9 +3,11 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BidController;
 use App\Http\Controllers\Admin\ClientRequestController;
+use App\Http\Controllers\Admin\ExternalListingController;
 use App\Http\Controllers\Admin\ListingController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PurchaseController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +24,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('listings/{listing}/pause', [ListingController::class, 'pause'])->name('listings.pause');
     Route::post('listings/{listing}/archive', [ListingController::class, 'archive'])->name('listings.archive');
     Route::post('listings/{listing}/reprocess-media', [ListingController::class, 'reprocessMedia'])->name('listings.reprocess_media');
+
+    // Annonces eCarsTrade (catalogue public)
+    Route::get('external-listings', [ExternalListingController::class, 'index'])->name('external_listings.index');
+    Route::get('external-listings/{externalListing}', [ExternalListingController::class, 'show'])->name('external_listings.show');
+    Route::post('external-listings/lifecycle', [ExternalListingController::class, 'runLifecycle'])->name('external_listings.lifecycle');
 
     // Ventes / réservations
     Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
@@ -48,4 +55,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('support-tickets/{supportTicket}', [SupportTicketController::class, 'show'])->name('support.show');
     Route::post('support-tickets/{supportTicket}/reply', [SupportTicketController::class, 'reply'])->name('support.reply');
     Route::post('support-tickets/{supportTicket}/status', [SupportTicketController::class, 'updateStatus'])->name('support.status');
+
+    // Paramètres
+    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::patch('settings', [SettingController::class, 'update'])->name('settings.update');
 });

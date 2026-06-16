@@ -187,9 +187,18 @@ class EcarsTradeImporter
 
     private function publishIfEligible(ExternalListing $listing): bool
     {
+        if ($listing->auction_end_at !== null && $listing->auction_end_at->isPast()) {
+            $listing->update([
+                'status' => ExternalListing::STATUS_EXPIRED,
+            ]);
+
+            return false;
+        }
+
         if (in_array($listing->status, [
             ExternalListing::STATUS_DO_NOT_PUBLISH,
             ExternalListing::STATUS_PUBLISHED,
+            ExternalListing::STATUS_EXPIRED,
         ], true)) {
             return false;
         }

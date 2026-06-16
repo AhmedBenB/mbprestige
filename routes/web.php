@@ -3,10 +3,13 @@
 use App\Http\Controllers\ClientEmailVerificationController;
 use App\Http\Controllers\Public\CatalogController as PublicCatalogController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
+use App\Http\Controllers\Public\ImageProxyController;
 use App\Http\Controllers\Public\VehicleController as PublicVehicleController;
+use App\Http\Controllers\PublicExternalListingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicHomeController::class, 'index'])->name('home');
+Route::get('/img-proxy', [ImageProxyController::class, 'show'])->name('img.proxy');
 
 Route::get('/demande', function () {
     $path = public_path('sourcing_auto_accueil_formulaire.html');
@@ -77,6 +80,8 @@ Route::get('/catalogue/prix-fixes', fn () => redirect()->route('catalog.index', 
 Route::get('/catalogue/stock', fn () => redirect()->route('catalog.index', ['mode' => 'stock']))->name('catalog.stock');
 
 Route::get('/vehicules/{listing}', [PublicVehicleController::class, 'show'])->name('vehicles.show');
+Route::get('/annonces/{identifier}', [PublicExternalListingController::class, 'show'])->name('external-listings.show');
+
 
 Route::get('/client/email/verify', [ClientEmailVerificationController::class, 'notice'])
     ->name('verification.notice');
@@ -88,4 +93,5 @@ Route::redirect('/dashboard_admin_sourcing.html', '/espace-garage', 301);
 Route::redirect('/login.html', '/connexion', 301);
 
 require __DIR__ . '/app.php';
+require __DIR__ . '/admin.php';
 require __DIR__ . '/auth.php';

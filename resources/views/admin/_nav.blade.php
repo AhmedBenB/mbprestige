@@ -6,6 +6,9 @@
         <a href="{{ route('admin.listings.index') }}" class="px-3 py-1.5 rounded-lg {{ request()->routeIs('admin.listings.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
             Annonces
         </a>
+        <a href="{{ route('admin.external_listings.index') }}" class="px-3 py-1.5 rounded-lg {{ request()->routeIs('admin.external_listings.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
+            Annonces eCarsTrade
+        </a>
         <a href="{{ route('admin.purchases.index') }}" class="px-3 py-1.5 rounded-lg {{ request()->routeIs('admin.purchases.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
             Ventes
         </a>
@@ -23,6 +26,9 @@
         </a>
         <a href="{{ route('admin.support.index') }}" class="px-3 py-1.5 rounded-lg {{ request()->routeIs('admin.support.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
             Tickets support
+        </a>
+        <a href="{{ route('admin.settings.index') }}" class="px-3 py-1.5 rounded-lg {{ request()->routeIs('admin.settings.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
+            Paramètres
         </a>
     </div>
 </div>

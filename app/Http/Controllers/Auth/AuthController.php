@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -94,12 +95,15 @@ class AuthController extends Controller
             return redirect($intended);
         }
 
-        return match ($user->role) {
-            'admin' => \Illuminate\Support\Facades\Route::has('admin.listings.index')
-                ? redirect()->route('admin.listings.index')
-                : redirect()->route('app.dashboard'),
-            default => redirect()->route('app.dashboard'),
-        };
+        if ((bool) ($user->is_admin ?? false) || in_array((string) $user->role, ['admin', 'super_admin'], true)) {
+            return \Illuminate\Support\Facades\Route::has('admin.external_listings.index')
+                ? redirect()->route('admin.external_listings.index')
+                : (\Illuminate\Support\Facades\Route::has('admin.listings.index')
+                    ? redirect()->route('admin.listings.index')
+                    : redirect()->route('app.dashboard'));
+        }
+
+        return redirect()->route('app.dashboard');
     }
 
     public function register(Request $request): RedirectResponse
@@ -112,7 +116,15 @@ class AuthController extends Controller
             'phone_country_code' => ['required', 'string', 'regex:/^\+\d{1,4}$/'],
             'phone_local' => ['required', 'string', 'regex:/^[0-9\s().-]{4,20}$/'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)->letters()->numbers()],
+            'referral_code' => ['required', 'string'],
         ]);
+
+        $expectedCode = Setting::get('registration_code', 'MBP95');
+        if (strtoupper(trim($data['referral_code'])) !== strtoupper($expectedCode)) {
+            throw ValidationException::withMessages([
+                'referral_code' => 'Code de parrainage invalide.',
+            ]);
+        }
 
         $phone = $this->formatInternationalPhone($data['phone_country_code'], $data['phone_local']);
 

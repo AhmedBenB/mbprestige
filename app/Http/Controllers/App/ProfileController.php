@@ -9,6 +9,7 @@ use App\Services\OrganizationEcarsTradeAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
@@ -21,7 +22,19 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = $request->user();
         $organization = $this->resolveOrganization($user);
-        $ecarsTradeAccount = $user->isAdmin() ? $ecarsTradeAccounts->forOrganization($organization) : null;
+        $ecarsTradeAccount = null;
+
+        if ($user->isAdmin()) {
+            try {
+                $ecarsTradeAccount = $ecarsTradeAccounts->forOrganization($organization);
+            } catch (Throwable $exception) {
+                Log::warning('Profile eCarsTrade account unavailable', [
+                    'user_id' => $user->id,
+                    'organization_id' => $organization?->id,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
+        }
 
         return view('app.profile.show', [
             'user' => $user,
@@ -159,4 +172,3 @@ class ProfileController extends Controller
         return $organization;
     }
 }
-

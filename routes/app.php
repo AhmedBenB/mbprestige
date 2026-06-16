@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\App\DashboardController;
+use App\Http\Controllers\App\ExternalListingBidController;
 use App\Http\Controllers\App\FavoriteController;
 use App\Http\Controllers\App\BidController;
 use App\Http\Controllers\App\PurchaseController;
@@ -23,6 +24,7 @@ Route::middleware(['auth'])->prefix('app')->name('app.')->group(function () {
 
     Route::get('/offres', [BidController::class, 'index'])->name('bids.index');
     Route::post('/vehicules/{listing}/offres', [BidController::class, 'store'])->name('bids.store');
+    Route::post('/annonces/{listing}/offres', [ExternalListingBidController::class, 'store'])->name('external_bids.store');
     Route::patch('/offres/{bid}', [BidController::class, 'update'])->name('bids.update');
     Route::delete('/offres/{bid}', [BidController::class, 'destroy'])->name('bids.destroy');
 

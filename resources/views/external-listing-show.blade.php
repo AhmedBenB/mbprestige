@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $payload['title'] }} - MBPRESTIGE</title>
     <meta name="description" content="Fiche annonce MBPRESTIGE : galerie, estimation, documents, similitudes et conditions d'achat.">
-    <link rel="stylesheet" href="/css/external-listing.css?v=20260514b">
+    <link rel="stylesheet" href="/css/external-listing.css?v=20260616">
 </head>
 <body>
 <header class="topbar">
@@ -36,11 +36,12 @@
     <section class="card media-card">
         <h2>Galerie</h2>
         @if(count($payload['images']) > 0)
-            <img id="hero-image" class="hero-image" src="{{ $payload['images'][0] }}" alt="Photo annonce" loading="eager" decoding="async" referrerpolicy="no-referrer">
+            @php $proxiedImages = \App\Helpers\ImageProxy::urls($payload['images']); @endphp
+            <img id="hero-image" class="hero-image" src="{{ $proxiedImages[0] }}" alt="Photo annonce" loading="eager" decoding="async">
             <div class="thumb-grid">
-                @foreach($payload['images'] as $image)
-                    <button type="button" class="thumb-btn" data-image="{{ $image }}">
-                        <img src="{{ $image }}" alt="Miniature" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                @foreach($proxiedImages as $proxyUrl)
+                    <button type="button" class="thumb-btn" data-image="{{ $proxyUrl }}">
+                        <img src="{{ $proxyUrl }}" alt="Miniature" loading="lazy" decoding="async">
                     </button>
                 @endforeach
             </div>
@@ -115,17 +116,29 @@
             @if(!empty($payload['top_bid_amount']))
                 <p><strong>Meilleure enchere:</strong> {{ number_format((float) $payload['top_bid_amount'], 0, ',', ' ') }} {{ $payload['currency'] }}</p>
             @endif
+            @php
+                $externalBidRouteName = null;
+                if (\Illuminate\Support\Facades\Route::has('app.external_bids.store')) {
+                    $externalBidRouteName = 'app.external_bids.store';
+                } elseif (\Illuminate\Support\Facades\Route::has('external_bids.store')) {
+                    $externalBidRouteName = 'external_bids.store';
+                }
+            @endphp
             @if(!empty($payload['auction_available']))
                 @auth
-                    <form method="POST" action="{{ route('app.external_bids.store', ['listing' => $listing->id]) }}" style="display:grid;gap:8px;margin-top:10px;">
-                        @csrf
-                        <label for="bid_amount"><strong>Votre enchere ({{ $payload['currency'] }})</strong></label>
-                        <input id="bid_amount" name="bid_amount" type="number" min="1" step="1" required style="padding:10px;border:1px solid #d1d5db;border-radius:8px;">
-                        <button type="submit" class="download-btn" style="width:max-content;">Proposer une enchere</button>
-                        @error('bid_amount')
-                            <p style="color:#b91c1c;margin:0;">{{ $message }}</p>
-                        @enderror
-                    </form>
+                    @if($externalBidRouteName)
+                        <form method="POST" action="{{ route($externalBidRouteName, ['listing' => $listing->id]) }}" style="display:grid;gap:8px;margin-top:10px;">
+                            @csrf
+                            <label for="bid_amount"><strong>Votre enchere ({{ $payload['currency'] }})</strong></label>
+                            <input id="bid_amount" name="bid_amount" type="number" min="1" step="1" required style="padding:10px;border:1px solid #d1d5db;border-radius:8px;">
+                            <button type="submit" class="download-btn" style="width:max-content;">Proposer une enchere</button>
+                            @error('bid_amount')
+                                <p style="color:#b91c1c;margin:0;">{{ $message }}</p>
+                            @enderror
+                        </form>
+                    @else
+                        <p class="muted" style="margin-top:10px;">Module d'enchere temporairement indisponible.</p>
+                    @endif
                 @else
                     <p class="muted" style="margin-top:10px;">Connecte-toi pour proposer une enchere.</p>
                     <a href="{{ route('login') }}" class="download-btn">Se connecter</a>
@@ -216,23 +229,6 @@
     const timerEl = document.getElementById('auction-timer');
     const endAt = payload.auction_end_at ? new Date(payload.auction_end_at).getTime() : null;
 
-    function upgradeImageUrl(url) {
-      if (!url) return url;
-      let next = String(url)
-        .replace(/\/(thumb|thumbs|thumbnail|thumbnails|small|preview)\//gi, '/')
-        .replace(/([_-])(thumb|thumbnail|small|preview)(?=\.)/gi, '');
-
-      try {
-        const u = new URL(next, window.location.origin);
-        ['w', 'width', 'h', 'height', 'q', 'quality', 'fit', 'resize', 'dpr'].forEach((key) => {
-          u.searchParams.delete(key);
-        });
-        return u.toString();
-      } catch (_) {
-        return next;
-      }
-    }
-
     function renderTimer() {
       if (!payload.is_auction || !endAt || Number.isNaN(endAt)) {
         timerEl.textContent = 'Pas de compte a rebours actif';
@@ -261,15 +257,10 @@
         const src = button.getAttribute('data-image');
         const hero = document.getElementById('hero-image');
         if (hero && src) {
-          hero.src = upgradeImageUrl(src);
+          hero.src = src;
         }
       });
     });
-
-    const hero = document.getElementById('hero-image');
-    if (hero && hero.src) {
-      hero.src = upgradeImageUrl(hero.src);
-    }
   })();
 </script>
 </body>

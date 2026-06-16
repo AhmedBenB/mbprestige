@@ -12,6 +12,7 @@ class ExternalListing extends Model
     public const STATUS_DRAFT = 'draft';
     public const STATUS_READY_FOR_REVIEW = 'ready_for_review';
     public const STATUS_PUBLISHED = 'published';
+    public const STATUS_EXPIRED = 'expired';
     public const STATUS_DO_NOT_PUBLISH = 'do_not_publish';
 
     protected $fillable = [
@@ -44,6 +45,7 @@ class ExternalListing extends Model
         'source_updated_at',
         'last_seen_at',
         'published_at',
+        'views_count',
     ];
 
     protected $casts = [
@@ -58,6 +60,7 @@ class ExternalListing extends Model
         'source_updated_at' => 'datetime',
         'last_seen_at' => 'datetime',
         'published_at' => 'datetime',
+        'views_count' => 'integer',
     ];
 
     public function source(): BelongsTo
@@ -83,5 +86,10 @@ class ExternalListing extends Model
     public function similarities(): HasMany
     {
         return $this->hasMany(ListingSimilarity::class);
+    }
+
+    public function bids(): HasMany
+    {
+        return $this->hasMany(ExternalListingBid::class);
     }
 }

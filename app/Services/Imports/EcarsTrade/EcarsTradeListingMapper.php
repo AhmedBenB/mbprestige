@@ -43,7 +43,12 @@ class EcarsTradeListingMapper
             'fuel' => $this->normalizeFuel((string) $listing->fuel),
             'transmission' => $this->normalizeTransmission((string) $listing->gearbox),
             'color' => $this->normalizeColor((string) $listing->color),
-            'country' => (string) data_get($raw, 'country', data_get($raw, 'origin_country', '')),
+            'country' => (string) (
+                data_get($raw, 'country')
+                ?? data_get($raw, 'origin_country')
+                ?? data_get($raw, 'country_origin')
+                ?? ''
+            ),
             'location' => (string) data_get($raw, 'location', ''),
             'images' => $this->extractImages($raw),
             'technical_data' => $this->extractTechnicalData($raw),

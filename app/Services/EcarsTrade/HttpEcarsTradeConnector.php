@@ -14,6 +14,7 @@ use GuzzleHttp\Cookie\SetCookie;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -90,7 +91,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             return;
         } catch (Throwable $exception) {
             $formException = $exception;
-            $this->logAuthWarning('eCarsTrade login failed', [
+            $this->logAuthInfo('eCarsTrade login failed (intermediate attempt)', [
                 'message' => $exception->getMessage(),
                 'cookies' => $this->exportCookies(),
             ]);
@@ -118,6 +119,13 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             $message = $reasons !== []
                 ? implode(' | ', $reasons)
                 : 'verification des identifiants requise';
+
+            $this->logAuthWarning('eCarsTrade authentication failed', [
+                'message' => $message,
+                'cookies' => $this->exportCookies(),
+                'api_error' => $apiException?->getMessage(),
+                'html_error' => $formException?->getMessage(),
+            ]);
 
             throw new RuntimeException(
                 'Connexion eCarsTrade impossible: ' . $message,
@@ -373,7 +381,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
                 return null;
             } catch (Throwable $exception) {
                 $lastException = $exception;
-                $this->logAuthWarning('eCarsTrade auth API failed', [
+                $this->logAuthInfo('eCarsTrade auth API failed (intermediate attempt)', [
                     'api_url' => $candidateApiUrl,
                     'message' => $exception->getMessage(),
                     'cookies' => $this->exportCookies(),
@@ -788,6 +796,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
         $mileageText = $this->extractFeatureValue($xpath, $root, 'Mileage');
         $fuelText = $this->extractFeatureValue($xpath, $root, 'Fuel');
         $gearboxText = $this->extractFeatureValue($xpath, $root, 'Gearbox');
+        $countryText = $this->extractCountryOfOrigin($xpath, $root);
         $cardHtml = $root->ownerDocument?->saveHTML($root) ?: '';
         $listingType = $this->determineListingType(
             strtolower(trim((string) $this->extractXPathString($xpath, $root, 'string(./@data-auction-type)'))),
@@ -819,6 +828,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
                 'mileage_text' => $mileageText,
                 'fuel_text' => $fuelText,
                 'gearbox_text' => $gearboxText,
+                'country_origin' => $countryText,
                 'price_text' => $priceText,
                 'listing_type' => $listingType,
                 'listing_type_label' => $this->listingTypeLabel($listingType),
@@ -1169,7 +1179,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             'hybridpetrolelectric', 'hybriddieselelectric', 'hybride', 'hybrid' => 'hybride',
             'lpg', 'gpl' => 'gpl',
             'naturalgas', 'gaznaturel', 'gaz' => 'gaz',
-            default => Str::lower($baseFuel),
+            default => null,
         };
     }
 
@@ -1182,7 +1192,8 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             'automatic', 'automatique', 'auto' => 'automatic',
             'manual', 'manuelle' => 'manual',
             'semiautomatic', 'semiautomatique' => 'semi-automatic',
-            default => Str::lower(trim((string) $gearbox)),
+            'aut8' => 'automatic',
+            default => null,
         };
     }
 
@@ -1224,7 +1235,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
 
     private function normalizeLookupValue(string $value): string
     {
-        $normalized = Str::lower($value);
+        $normalized = Str::lower(Str::ascii($value));
         $normalized = str_replace(
             [' ', '-', '/', '\\', '.', ',', '(', ')', '\''],
             '',
@@ -1281,6 +1292,10 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
         $url = trim($url);
         if (Str::startsWith($url, ['http://', 'https://'])) {
             return $url;
+        }
+
+        if (Str::startsWith($url, '//')) {
+            return 'https:' . $url;
         }
 
         return rtrim((string) config('ecarstrade.base_url'), '/') . '/' . ltrim($url, '/');
@@ -1394,17 +1409,23 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
             return false;
         }
 
-        if (!preg_match('/\.(jpg|jpeg|png|webp|gif|avif)$/i', $path)) {
-            return false;
-        }
-
         foreach (['icon', 'logo', 'sprite', 'avatar', 'flag', 'placeholder'] as $blocked) {
             if (str_contains($path, $blocked)) {
                 return false;
             }
         }
 
-        return true;
+        if (preg_match('/\.(jpg|jpeg|png|webp|gif|avif)$/i', $path)) {
+            return true;
+        }
+
+        foreach (['/image', '/images', '/img', '/photo', '/photos', '/vehicle', '/car'] as $hint) {
+            if (str_contains($path, $hint)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isLikelyDocumentUrl(string $url): bool
@@ -1615,7 +1636,7 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
         $message = 'Connexion eCarsTrade non confirmee. '
             . implode(' | ', $reasons !== [] ? $reasons : ['verifie les champs de login et les marqueurs de session']);
 
-        $this->logAuthWarning('eCarsTrade login not confirmed', array_merge($extraContext, [
+        $this->logAuthInfo('eCarsTrade login not confirmed', array_merge($extraContext, [
             'context' => $context,
             'message' => $message,
             'cookies' => $this->exportCookies(),
@@ -2030,6 +2051,16 @@ class HttpEcarsTradeConnector implements EcarsTradeConnectorInterface
 
     private function logAuthWarning(string $message, array $context = []): void
     {
+        if ((bool) config('ecarstrade.import.reduce_auth_warning_noise', true)) {
+            $throttleSeconds = max(60, (int) config('ecarstrade.import.auth_warning_throttle_seconds', 1800));
+            $fingerprint = md5($message . '|' . (($context['context'] ?? '') ?: ($context['api_url'] ?? '')));
+            $cacheKey = "ecarstrade:auth-warning:{$fingerprint}";
+
+            if (!Cache::add($cacheKey, true, now()->addSeconds($throttleSeconds))) {
+                return;
+            }
+        }
+
         Log::warning($message, $this->withRuntimeContext($context));
     }
 
